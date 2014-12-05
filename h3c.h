@@ -12,14 +12,15 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-#include <net/ethernet.h>
 #include <netinet/if_ether.h>
+#include <netinet/in.h>
 #include <netpacket/packet.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 
 #define EAPOL_VERSION 1
 
@@ -41,6 +42,14 @@
 #define BUF_LEN 256
 #define MD5_LEN 16
 
+const static char PAE_GROUP_ADDR[] = \
+		{0x01, 0x80, 0xc2, 0x00, 0x00, 0x03};
+
+const static char VERSION_INFO[] = \
+		{0x06, 0x07, 'b', 'j', 'Q', '7', 'S', 'E', '8', 'B', 'Z', '3', 'M', \
+	'q', 'H', 'h', 's', '3', 'c', 'l', 'M', 'r', 'e', 'g', 'c', 'D', 'Y', \
+	'3', 'Y', '=',0x20,0x20};
+
 struct eapol{
 	unsigned char version;
 	unsigned char type;
@@ -59,5 +68,24 @@ struct packet{
 	struct eapol eapol_header;
 	struct eap eap_header;
 }__attribute__ ((packed)) packet;
+
+void h3c_set_eapol_header(unsigned char type, unsigned short p_len);
+
+void h3c_set_eap_header(unsigned char code, unsigned char id, \
+		unsigned short d_len, unsigned char type);
+
+void h3c_init();
+
+void h3c_start();
+
+void h3c_logoff();
+
+void h3c_send_id(unsigned char packet_id);
+
+void h3c_send_md5(unsigned char packet_id, unsigned char *md5data);
+
+void h3c_send_h3c(unsigned char packet_id);
+
+void h3c_response();
 
 #endif /* H3C_H_ */

@@ -7,24 +7,16 @@
 
 #include "h3c.h"
 
-int sockfd;
+extern int sockfd;
 
-char *interface;
-char *username;
-char *password;
+extern char *interface;
+extern char *username;
+extern char *password;
 
-const char PAE_GROUP_ADDR[] = \
-		{0x01, 0x80, 0xc2, 0x00, 0x00, 0x03};
+extern unsigned char send_buf[BUF_LEN];
+extern unsigned char recv_buf[BUF_LEN];
 
-const char VERSION_INFO[] = \
-		{0x06, 0x07, 'b', 'j', 'Q', '7', 'S', 'E', '8', 'B', 'Z', '3', 'M', \
-	'q', 'H', 'h', 's', '3', 'c', 'l', 'M', 'r', 'e', 'g', 'c', 'D', 'Y', \
-	'3', 'Y', '=',0x20,0x20};
-
-unsigned char send_buf[BUF_LEN];
-unsigned char recv_buf[BUF_LEN];
-
-struct sockaddr_ll addr;
+extern struct sockaddr_ll addr;
 
 void h3c_set_eapol_header(unsigned char type, unsigned short p_len)
 {
@@ -192,8 +184,10 @@ void h3c_response()
 		/*
 		 * Got success
 		 * Go daemon
+		 * NOT always works on unix
 		 */
-		daemon(0,0);
+
+		daemon(0, 0);
 	}
 	else if (pkt->eap_header.code == EAP_FAILURE)
 	{
@@ -210,25 +204,16 @@ void h3c_response()
 		 */
 		if (pkt->eap_header.type == EAP_TYPE_ID)
 		{
-			/*
-			 * Response id
-			 */
 			h3c_send_id(pkt->eap_header.id);
 		}
 		else if (pkt->eap_header.type == EAP_TYPE_MD5)
 		{
-			/*
-			 * Response md5
-			 */
 			unsigned char *md5;
 			md5 = (unsigned char *)(recv_buf + sizeof(struct packet) + 1);
 			h3c_send_md5(pkt->eap_header.id, md5);
 		}
 		else if (pkt->eap_header.type == EAP_TYPE_H3C)
 		{
-			/*
-			 * Response h3c
-			 */
 			h3c_send_h3c(pkt->eap_header.id);
 		}
 	}
@@ -238,40 +223,4 @@ void h3c_response()
 		 * Got response
 		 */
 	}
-}
-
-int main(int argc, char **argv)
-{
-	/*
-	 * Check privilege
-	 */
-	if (0 != getuid())
-	{
-		printf("please run as root\n");
-		exit(-1);
-	}
-
-	/*
-	 * Check arguments
-	 */
-	if (4 != argc)
-	{
-		printf("usage: %s [interface] [username] [password]\n", argv[0]);
-		exit(-1);
-	}
-
-	interface = argv[1];
-	username = argv[2];
-	password = argv[3];
-
-	h3c_init();
-
-	h3c_start();
-
-	for(;;)
-	{
-		h3c_response();
-	}
-
-	return 0;
 }
