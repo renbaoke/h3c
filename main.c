@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 	/*
 	 * Check privilege
 	 */
-	if (0 != getuid())
+	if (0 != geteuid())
 		exit(-1);
 
 	/*
