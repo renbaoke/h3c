@@ -7,16 +7,16 @@
 
 #include "h3c.h"
 
-int sockfd;
+int success_handler()
+{
+	printf("succeed\n");
+	daemon(0, 0);
+}
 
-char *interface;
-char *username;
-char *password;
-
-unsigned char send_buf[BUF_LEN];
-unsigned char recv_buf[BUF_LEN];
-
-struct sockaddr_ll addr;
+int failure_hander()
+{
+	printf("failed\n");
+}
 
 int main(int argc, char **argv)
 {
@@ -32,17 +32,13 @@ int main(int argc, char **argv)
 	if (4 != argc)
 		exit(-1);
 
-	interface = argv[1];
-	username = argv[2];
-	password = argv[3];
-
-	h3c_init();
+	h3c_init(argv[1], argv[2], argv[3]);
 
 	h3c_start();
 
 	for(;;)
 	{
-		h3c_response();
+		h3c_response(success_handler, failure_hander);
 	}
 
 	return 0;

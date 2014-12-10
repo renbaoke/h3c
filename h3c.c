@@ -7,16 +7,16 @@
 
 #include "h3c.h"
 
-extern int sockfd;
+static int sockfd;
 
-extern char *interface;
-extern char *username;
-extern char *password;
+static char *interface;
+static char *username;
+static char *password;
 
-extern unsigned char send_buf[BUF_LEN];
-extern unsigned char recv_buf[BUF_LEN];
+static unsigned char send_buf[BUF_LEN];
+static unsigned char recv_buf[BUF_LEN];
 
-extern struct sockaddr_ll addr;
+static struct sockaddr_ll addr;
 
 void h3c_set_eapol_header(unsigned char type, unsigned short p_len)
 {
@@ -40,26 +40,30 @@ void h3c_set_eap_header(unsigned char code, unsigned char id, \
 	pkt->eap_header.type = type;
 }
 
-void h3c_init()
+int h3c_init(char *_interface, char *_username, char *_password)
 {
 	struct ifreq ifr;
 	struct packet *pkt;
 	pkt = (struct packet *)send_buf;
 
+	interface = _interface;
+	username = _username;
+	password = _password;
+
 	sockfd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
 	if (-1 == sockfd)
-		exit(errno);
+		return -1;
 
 	memcpy(pkt->eth_header.ether_dhost,PAE_GROUP_ADDR,ETH_ALEN);
 
 	strcpy(ifr.ifr_name, interface);
 	if (-1 == ioctl(sockfd, SIOCGIFHWADDR, &ifr))
-		exit(errno);
+		return -1;
 
 	memcpy(pkt->eth_header.ether_shost,ifr.ifr_hwaddr.sa_data,ETH_ALEN);
 
 	if(-1 == ioctl(sockfd,SIOCGIFINDEX,&ifr))
-		exit(errno);
+		return -1;
 
 	addr.sll_ifindex = ifr.ifr_ifindex;
 
@@ -67,31 +71,34 @@ void h3c_init()
 	 * use htons when the data is more than 1 byte
 	 */
 	pkt->eth_header.ether_type = htons(ETH_P_PAE);
+	
+	return 0;
 }
 
-void h3c_start()
+int h3c_start()
 {
 	h3c_set_eapol_header(EAPOL_START, 0);
 
-	if (-1 == sendto(sockfd, (void *)send_buf, sizeof(struct ether_header) + \
-			sizeof(struct eapol), 0, (struct sockaddr*)&addr, sizeof(addr)))
-		exit(errno);
+	return sendto(sockfd, (void *)send_buf, \
+			sizeof(struct ether_header)+ sizeof(struct eapol), 0, \
+			(struct sockaddr*)&addr, sizeof(addr));
 }
 
-void h3c_logoff()
+int h3c_logoff()
 {
 	h3c_set_eapol_header(EAPOL_LOGOFF, 0);
 
-	if (-1 == sendto(sockfd, (void *)send_buf, sizeof(struct ether_header) + \
-			sizeof(struct eapol), 0, (struct sockaddr*)&addr, sizeof(addr)))
-		exit(errno);
+	return sendto(sockfd, (void *)send_buf, \
+			sizeof(struct ether_header) + sizeof(struct eapol), 0, \
+			(struct sockaddr*)&addr, sizeof(addr));
 }
 
-void h3c_send_id(unsigned char packet_id)
+int h3c_send_id(unsigned char packet_id)
 {
-	unsigned short len = htons(sizeof(struct eap) + sizeof(VERSION_INFO) + \
-			strlen(username));
-	unsigned char *data = (unsigned char *)(send_buf + sizeof(struct packet));
+	unsigned short len = htons(sizeof(struct eap) + \
+			sizeof(VERSION_INFO) + strlen(username));
+	unsigned char *data = \
+			(unsigned char *)(send_buf + sizeof(struct packet));
 
 	h3c_set_eapol_header(EAPOL_EAPPACKET, len);
 	h3c_set_eap_header(EAP_RESPONSE, packet_id, len, EAP_TYPE_ID);
@@ -101,17 +108,18 @@ void h3c_send_id(unsigned char packet_id)
 	data += sizeof(VERSION_INFO);
 	memcpy(data, username, strlen(username));
 
-	if (-1 == sendto(sockfd, (void *)send_buf, sizeof(struct packet) + \
+	return sendto(sockfd, (void *)send_buf, sizeof(struct packet) + \
 			sizeof(VERSION_INFO) + strlen(username), 0, \
-			(struct sockaddr*)&addr, sizeof(addr)))
-		exit(errno);
+			(struct sockaddr*)&addr, sizeof(addr));
 }
 
-void h3c_send_md5(unsigned char packet_id, unsigned char *md5data)
+int h3c_send_md5(unsigned char packet_id, unsigned char *md5data)
 {
 	unsigned char md5[MD5_LEN];
-	unsigned short len = htons(sizeof(struct eap) + 1 + MD5_LEN + strlen(username));
-	unsigned char *data = (unsigned char *)(send_buf + sizeof(struct packet));
+	unsigned short len = htons(sizeof(struct eap) + 1 + \
+			MD5_LEN + strlen(username));
+	unsigned char *data = \
+			(unsigned char *)(send_buf + sizeof(struct packet));
 
 	memset(md5, 0, MD5_LEN);
 	memcpy(md5, password, strlen(password));
@@ -130,18 +138,20 @@ void h3c_send_md5(unsigned char packet_id, unsigned char *md5data)
 	data += MD5_LEN;
 	memcpy(data, username, strlen(username));
 
-	if (-1 == sendto(sockfd, (void *)send_buf, sizeof(struct packet) + 1 + \
-			MD5_LEN + strlen(username), 0, (struct sockaddr*)&addr, sizeof(addr)))
-		exit(errno);
+	return sendto(sockfd, (void *)send_buf, sizeof(struct packet) + \
+			1 + MD5_LEN + strlen(username), 0, \
+			(struct sockaddr*)&addr, sizeof(addr));
 }
 
-void h3c_send_h3c(unsigned char packet_id)
+int h3c_send_h3c(unsigned char packet_id)
 {
 	size_t password_size = strlen(password);
 	size_t username_size = strlen(username);
 
-	unsigned short len = htons(sizeof(struct eap) + password_size + username_size);
-	unsigned char *data = (unsigned char *)(send_buf + sizeof(struct packet));
+	unsigned short len = htons(sizeof(struct eap) + password_size + \
+			username_size);
+	unsigned char *data = \
+			(unsigned char *)(send_buf + sizeof(struct packet));
 
 	h3c_set_eapol_header(EAPOL_EAPPACKET, len);
 	h3c_set_eap_header(EAP_RESPONSE, packet_id, len, EAP_TYPE_H3C);
@@ -154,12 +164,12 @@ void h3c_send_h3c(unsigned char packet_id)
 	data += strlen(password);
 	memcpy(data, username, username_size);
 
-	if (-1 == sendto(sockfd, (void *)send_buf, sizeof(struct packet) + 1 + \
-			password_size + username_size, 0, (struct sockaddr*)&addr, sizeof(addr)))
-		exit(errno);
+	return sendto(sockfd, (void *)send_buf, sizeof(struct packet) + \
+			1 + password_size + username_size, 0, \
+			(struct sockaddr*)&addr, sizeof(addr));
 }
 
-void h3c_response()
+int h3c_response(int (*success_callback)(), int (*failure_callback)())
 {
 	struct packet *pkt;
 	pkt = (struct packet *)recv_buf;
@@ -169,52 +179,55 @@ void h3c_response()
 
 	if (-1 == recvfrom(sockfd, (void *)recv_buf, BUF_LEN, 0, \
 			(struct sockaddr *)&addr, &len))
-		exit(errno);
+		return -1;
 
 	if (pkt->eapol_header.type != EAPOL_EAPPACKET)
 	{
 		/*
 		 * Got unknown eapol type
 		 */
-		return;
+		return 0;
 	}
 
 	if (pkt->eap_header.code == EAP_SUCCESS)
 	{
 		/*
 		 * Got success
-		 * Go daemon
-		 * NOT always works on unix
 		 */
-
-		daemon(0, 0);
+		if (NULL != success_callback)
+			return (*success_callback)();
+		else
+			return 0;
 	}
 	else if (pkt->eap_header.code == EAP_FAILURE)
 	{
 		/*
 		 * Got failure
 		 */
-		exit(-1);
+		if (NULL != *failure_callback)
+			return (*failure_callback)();
+		else
+			return 0;
 	}
 	else if (pkt->eap_header.code == EAP_REQUEST)
 	{
 		/*
 		 * Got request
-		 * Response according request type
+		 * Response according to request type
 		 */
 		if (pkt->eap_header.type == EAP_TYPE_ID)
 		{
-			h3c_send_id(pkt->eap_header.id);
+			return h3c_send_id(pkt->eap_header.id);
 		}
 		else if (pkt->eap_header.type == EAP_TYPE_MD5)
 		{
 			unsigned char *md5;
 			md5 = (unsigned char *)(recv_buf + sizeof(struct packet) + 1);
-			h3c_send_md5(pkt->eap_header.id, md5);
+			return h3c_send_md5(pkt->eap_header.id, md5);
 		}
 		else if (pkt->eap_header.type == EAP_TYPE_H3C)
 		{
-			h3c_send_h3c(pkt->eap_header.id);
+			return h3c_send_h3c(pkt->eap_header.id);
 		}
 	}
 	else if (pkt->eap_header.code == EAP_RESPONSE)
@@ -222,5 +235,6 @@ void h3c_response()
 		/*
 		 * Got response
 		 */
+		 return 0;
 	}
 }
