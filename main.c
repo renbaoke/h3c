@@ -16,6 +16,7 @@ int success_handler()
 int failure_hander()
 {
 	printf("failed\n");
+	return 0;
 }
 
 int main(int argc, char **argv)
