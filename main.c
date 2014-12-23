@@ -9,13 +9,13 @@
 
 int success_handler()
 {
-	printf("succeed\n");
+	printf("Succeed\n");
 	daemon(0, 0);
 }
 
 int failure_hander()
 {
-	printf("failed\n");
+	printf("Failed\n");
 	return 0;
 }
 
@@ -33,7 +33,9 @@ int main(int argc, char **argv)
 	if (4 != argc)
 		exit(-1);
 
-	h3c_init(argv[1], argv[2], argv[3]);
+	h3c_init(argv[1]);
+	h3c_set_username(argv[2]);
+	h3c_set_password(argv[3]);
 
 	h3c_start();
 

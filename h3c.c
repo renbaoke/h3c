@@ -119,15 +119,13 @@ static int h3c_send_h3c(unsigned char packet_id)
 			(struct sockaddr*)&addr, sizeof(addr));
 }
 
-int h3c_init(char *_interface, char *_username, char *_password)
+int h3c_init(char *_interface)
 {
 	struct ifreq ifr;
 	struct packet *pkt;
 	pkt = (struct packet *)send_buf;
 
 	interface = _interface;
-	username = _username;
-	password = _password;
 
 	sockfd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
 	if (-1 == sockfd)
@@ -152,6 +150,16 @@ int h3c_init(char *_interface, char *_username, char *_password)
 	pkt->eth_header.ether_type = htons(ETH_P_PAE);
 	
 	return 0;
+}
+
+void h3c_set_username(char *_username)
+{
+	username = _username;
+}
+
+void h3c_set_password(char *_password)
+{
+	password = _password;
 }
 
 int h3c_start()

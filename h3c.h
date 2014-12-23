@@ -68,7 +68,8 @@ struct packet{
 	struct eap eap_header;
 }__attribute__ ((packed)) packet;
 
-static void h3c_set_eapol_header(unsigned char type, unsigned short p_len);
+static void h3c_set_eapol_header(unsigned char type, \
+		unsigned short p_len);
 static void h3c_set_eap_header(unsigned char code, unsigned char id, \
 		unsigned short d_len, unsigned char type);
 
@@ -76,9 +77,11 @@ static int h3c_send_id(unsigned char packet_id);
 static int h3c_send_md5(unsigned char packet_id, unsigned char *md5data);
 static int h3c_send_h3c(unsigned char packet_id);
 
-int h3c_init(char *_interface, char *_username, char *_password);
+int h3c_init(char *_interface);
 int h3c_start();
 int h3c_logoff();
 int h3c_response(int (*success_callback)(), int (*failure_callback)());
+void h3c_set_username(char *_username);
+void h3c_set_password(char *_password);
 
 #endif /* H3C_H_ */
