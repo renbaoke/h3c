@@ -9,7 +9,6 @@
 
 static int sockfd;
 
-static char *interface;
 static char *username;
 static char *password;
 
@@ -121,34 +120,64 @@ static int h3c_send_h3c(unsigned char packet_id)
 
 int h3c_init(char *_interface)
 {
-	struct ifreq ifr;
 	struct packet *pkt;
 	pkt = (struct packet *)send_buf;
 
-	interface = _interface;
+#ifdef AF_LINK
+	struct ifaddrs *ifap, *ifa;
+	struct sockaddr_dl *sdl;
+#else
+	struct ifreq ifr;
+#endif
 
-	sockfd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
+#ifdef AF_LINK
+	sockfd = socket(AF_LINK, SOCK_RAW, htons(ETH_P_PAE));
+#else
+	sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
+#endif
 	if (-1 == sockfd)
 		return -1;
 
 	memcpy(pkt->eth_header.ether_dhost,PAE_GROUP_ADDR,ETH_ALEN);
 
-	strcpy(ifr.ifr_name, interface);
+#ifdef AF_LINK
+	getifaddrs(&ifap);
+	for (ifa = ifap; ifa; ifa = ifa->ifa_next)
+	{
+		sdl = (struct sockaddr_dl *)ifa->ifa_addr;
+		if (0 == strcmp(_interface, ifa->ifa_name))
+		{
+			memcpy(pkt->eth_header.ether_dhost, sdl->sdl_data + \
+				sdl->sdl_nlen, ETH_ALEN);
+			break;
+		}
+	}
+	freeifaddrs(ifap);
+	if (NULL == ifa)
+		return -1;
+#else
+	strcpy(ifr.ifr_name, _interface);
 	if (-1 == ioctl(sockfd, SIOCGIFHWADDR, &ifr))
 		return -1;
 
 	memcpy(pkt->eth_header.ether_shost,ifr.ifr_hwaddr.sa_data,ETH_ALEN);
+#endif
 
-	if(-1 == ioctl(sockfd,SIOCGIFINDEX,&ifr))
+#ifdef AF_LINK
+	if (0 > (addr.sll_ifindex = if_nametoindex(_interface)))
+		return -1;
+#else
+	if (-1 == ioctl(sockfd,SIOCGIFINDEX,&ifr))
 		return -1;
 
 	addr.sll_ifindex = ifr.ifr_ifindex;
+#endif
 
 	/*
 	 * use htons when the data is more than 1 byte
 	 */
 	pkt->eth_header.ether_type = htons(ETH_P_PAE);
-	
+
 	return 0;
 }
 

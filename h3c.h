@@ -8,13 +8,21 @@
 #ifndef H3C_H_
 #define H3C_H_
 
-#include <sys/types.h>
+#include <errno.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-#include <netinet/if_ether.h>
 #include <netinet/in.h>
+#include <net/ethernet.h>
+
+#ifdef AF_LINK
+#include <ifaddrs.h>
+#include <net/if_dl.h>
+#endif
+
+#ifdef AF_PACKET
 #include <netpacket/packet.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +48,14 @@
 
 #define BUF_LEN 256
 #define MD5_LEN 16
+
+#ifndef ETH_P_PAE
+#define ETH_P_PAE 0x888E
+#endif
+
+#ifndef ETH_ALEN
+#define ETH_ALEN 6
+#endif
 
 const static char PAE_GROUP_ADDR[] = \
 		{0x01, 0x80, 0xc2, 0x00, 0x00, 0x03};
@@ -68,14 +84,17 @@ struct packet{
 	struct eap eap_header;
 }__attribute__ ((packed)) packet;
 
-static void h3c_set_eapol_header(unsigned char type, \
-		unsigned short p_len);
-static void h3c_set_eap_header(unsigned char code, unsigned char id, \
-		unsigned short d_len, unsigned char type);
-
-static int h3c_send_id(unsigned char packet_id);
-static int h3c_send_md5(unsigned char packet_id, unsigned char *md5data);
-static int h3c_send_h3c(unsigned char packet_id);
+#ifdef AF_LINK
+struct sockaddr_ll{
+	unsigned short int sll_family;
+	unsigned short int sll_protocol;
+	int sll_ifindex;
+	unsigned short int sll_hatype;
+	unsigned char sll_pkttype;
+	unsigned char sll_halen;
+	unsigned char sll_addr[8];
+}__attribute__((packed)) sockaddr;
+#endif
 
 int h3c_init(char *_interface);
 int h3c_start();
