@@ -10,7 +10,6 @@
 int success_handler()
 {
 	printf("Succeed to go on line\n");
-	printf("Try to run \"dhclient [interface]\" as root\n");
 	daemon(0, 0);
 	return 0;
 }
@@ -47,10 +46,10 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
-	h3c_set_username(argv[2]);
-	h3c_set_password(argv[3]);
+	set_username(argv[2]);
+	set_password(argv[3]);
 
-	if (-1 == h3c_start())
+	if (-1 == start())
 	{
 		printf("Failed to start: %s\n", strerror(errno));
 		exit(-1);
@@ -58,7 +57,7 @@ int main(int argc, char **argv)
 
 	for(;;)
 	{
-		h3c_response(success_handler, failure_hander);
+		response(success_handler, failure_hander);
 	}
 
 	return 0;

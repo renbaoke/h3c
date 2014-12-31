@@ -15,14 +15,7 @@
 #include <netinet/in.h>
 #include <net/ethernet.h>
 
-#ifdef AF_LINK
-#include <ifaddrs.h>
-#include <net/if_dl.h>
-#endif
-
-#ifdef AF_PACKET
 #include <netpacket/packet.h>
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,6 +41,9 @@
 
 #define BUF_LEN 256
 #define MD5_LEN 16
+#define TYPE_LEN 1
+#define MD5_LEN_LEN 1
+#define H3C_LEN_LEN 1
 
 #ifndef ETH_P_PAE
 #define ETH_P_PAE 0x888E
@@ -68,14 +64,13 @@ const static char VERSION_INFO[] = \
 struct eapol{
 	unsigned char version;
 	unsigned char type;
-	unsigned short p_len;
+	unsigned short length;
 }__attribute__ ((packed)) eapol;
 
 struct eap{
 	unsigned char code;
 	unsigned char id;
-	unsigned short d_len;
-	unsigned char type;
+	unsigned short length;
 }__attribute__ ((packed)) eap;
 
 struct packet{
@@ -84,23 +79,12 @@ struct packet{
 	struct eap eap_header;
 }__attribute__ ((packed)) packet;
 
-#ifdef AF_LINK
-struct sockaddr_ll{
-	unsigned short int sll_family;
-	unsigned short int sll_protocol;
-	int sll_ifindex;
-	unsigned short int sll_hatype;
-	unsigned char sll_pkttype;
-	unsigned char sll_halen;
-	unsigned char sll_addr[8];
-}__attribute__((packed)) sockaddr;
-#endif
-
-int h3c_init(char *_interface);
-int h3c_start();
-int h3c_logoff();
-int h3c_response(int (*success_callback)(), int (*failure_callback)());
-void h3c_set_username(char *_username);
-void h3c_set_password(char *_password);
+int init(char *_interface);
+int start();
+int logoff();
+int response(int (*success_callback)(), int (*failure_callback)());
+void set_username(char *_username);
+void set_password(char *_password);
+void clean();
 
 #endif /* H3C_H_ */
