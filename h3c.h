@@ -13,7 +13,12 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <netinet/in.h>
+
+#ifdef __NetBSD__
+#include <net/if_ether.h>
+#else
 #include <net/ethernet.h>
+#endif
 
 #ifdef AF_LINK
 //BSD

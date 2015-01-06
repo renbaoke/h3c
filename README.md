@@ -1,7 +1,8 @@
 h3c
 ===
 
-client for h3c on *unix(tested on ubuntu 14.04, freebsd 10.1)
+client for h3c on *unix
+(tested on ubuntu 14.04, freebsd 10.1 and netbsd 7.0)
 
 build: gcc h3c.c main.c -o h3c
 

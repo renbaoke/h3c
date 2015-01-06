@@ -8,22 +8,22 @@
 #include <signal.h>
 #include "h3c.h"
 
-//#define DEBUG
-
 void success_handler()
 {
-	printf("Succeed to go on line\n");
+	printf("Online now\n");
 	daemon(0, 0);
 }
 
 void failure_handler()
 {
-	printf("Failed to go on line\n");
+	printf("Offline now\n");
 }
 
 void exit_handler(int arg)
 {
+	printf("\nExiting...\n");
 	h3c_logoff();
+	h3c_response(NULL, failure_handler);
 	h3c_clean();
 	exit(0);
 }
@@ -48,18 +48,18 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
-	h3c_set_verbose(1);
-
 	if (h3c_init(argv[1]) == -1)
 	{
 		printf("Failed to initialize: %s\n",strerror(errno));
 		exit(-1);
 	}
 
-	//signal(SIGTERM, exit_handler);
+	signal(SIGINT, exit_handler);
+	signal(SIGTERM, exit_handler);
 
 	h3c_set_username(argv[2]);
 	h3c_set_password(argv[3]);
+	h3c_set_verbose(1);
 
 	if (h3c_start() == -1)
 	{

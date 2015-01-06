@@ -93,13 +93,16 @@ static int recvin(int length)
 	int ret;
 #ifdef AF_LINK
 	ret =  read(sockfd, recv_buf, length);
-	/*
-	 * We received another 26 bytes before what we except, and i do \
-	 * not know what is it. Anyway, it is working now.
-	 */
-	ret -= 26;
+
+#ifdef __NetBSD__
+#define HAT 22
+#else
+#define HAT 26
+#endif
+
+	ret -= HAT;
 	unsigned char *x = recv_buf;
-	unsigned char *y = x + 26;
+	unsigned char *y = x + HAT;
 	int z = ret;
 	while (z--)
 		*x++ = *y++;
@@ -160,9 +163,7 @@ static int send_md5(unsigned char packet_id, unsigned char *md5data)
 	memset(md5, 0, MD5_LEN);
 	memcpy(md5, password, MD5_LEN);
 
-	/*
-	 * Do md5, learned from yah3c.
-	 */
+	//Do md5, learned from yah3c.
 	int i;
 	for (i = 0; i < MD5_LEN; i++)
 		md5[i] ^= md5data[i];
@@ -181,9 +182,7 @@ static int send_md5(unsigned char packet_id, unsigned char *md5data)
 
 static int send_h3c(unsigned char packet_id)
 {
-	/*
-	 * Not called so far as i can observe.
-	 */
+	//Not called so far as i can observe.
 	int username_length = strlen(username);
 	int password_length = strlen(password);
 	unsigned short len = htons(sizeof(struct eap) + 1 + 1 + \
@@ -242,9 +241,15 @@ int h3c_init(char *_interface)
 	if (ioctl(sockfd, BIOCIMMEDIATE, &n) == -1)
 		return -1;
 
+#ifdef __NetBSD__
+	n = 0;
+	if (ioctl(sockfd, BIOCSSEESENT, &n) == -1)
+		return -1;
+#else
 	n = BPF_D_IN;
 	if (ioctl(sockfd, BIOCSDIRECTION, &n) == -1)
 		return -1;
+#endif
 
 	if (ioctl(sockfd, BIOCSETF, &filter) == -1)
 		return -1;
