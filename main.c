@@ -5,19 +5,27 @@
  *      Author: baoke
  */
 
+#include <signal.h>
 #include "h3c.h"
 
-int success_handler()
+//#define DEBUG
+
+void success_handler()
 {
 	printf("Succeed to go on line\n");
 	daemon(0, 0);
-	return 0;
 }
 
-int failure_hander()
+void failure_handler()
 {
-	printf("Failed\n");
-	return 0;
+	printf("Failed to go on line\n");
+}
+
+void exit_handler(int arg)
+{
+	h3c_logoff();
+	h3c_clean();
+	exit(0);
 }
 
 int main(int argc, char **argv)
@@ -25,7 +33,7 @@ int main(int argc, char **argv)
 	/*
 	 * Check privilege
 	 */
-	if (0 != geteuid())
+	if (geteuid() != 0)
 	{
 		printf("Run as root\n");
 		exit(-1);
@@ -34,22 +42,26 @@ int main(int argc, char **argv)
 	/*
 	 * Check arguments
 	 */
-	if (4 != argc)
+	if (argc != 4)
 	{
 		printf("Usage:%s [interface] [username] [password]\n", argv[0]);
 		exit(-1);
 	}
 
-	if (-1 == h3c_init(argv[1]))
+	h3c_set_verbose(1);
+
+	if (h3c_init(argv[1]) == -1)
 	{
 		printf("Failed to initialize: %s\n",strerror(errno));
 		exit(-1);
 	}
 
-	set_username(argv[2]);
-	set_password(argv[3]);
+	//signal(SIGTERM, exit_handler);
 
-	if (-1 == start())
+	h3c_set_username(argv[2]);
+	h3c_set_password(argv[3]);
+
+	if (h3c_start() == -1)
 	{
 		printf("Failed to start: %s\n", strerror(errno));
 		exit(-1);
@@ -57,7 +69,11 @@ int main(int argc, char **argv)
 
 	for(;;)
 	{
-		response(success_handler, failure_hander);
+		if (h3c_response(success_handler, failure_handler) == -1)
+		{
+			printf("Failed to response: %s\n", strerror(errno));
+			exit(-1);
+		}
 	}
 
 	return 0;

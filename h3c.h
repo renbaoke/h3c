@@ -15,7 +15,17 @@
 #include <netinet/in.h>
 #include <net/ethernet.h>
 
+#ifdef AF_LINK
+//BSD
+#include <ifaddrs.h>
+#include <net/if_dl.h>
+#include <net/bpf.h>
+#include <net/if_types.h>
+#include <fcntl.h>
+#else
+//Linux
 #include <netpacket/packet.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,8 +49,10 @@
 #define EAP_SUCCESS 3
 #define EAP_FAILURE 4
 
-#define BUF_LEN 256
+#define BUF_LEN 128
 #define MD5_LEN 16
+#define USR_LEN 16
+#define PWD_LEN 16
 #define TYPE_LEN 1
 #define MD5_LEN_LEN 1
 #define H3C_LEN_LEN 1
@@ -79,12 +91,13 @@ struct packet{
 	struct eap eap_header;
 }__attribute__ ((packed)) packet;
 
-int init(char *_interface);
-int start();
-int logoff();
-int response(int (*success_callback)(), int (*failure_callback)());
-void set_username(char *_username);
-void set_password(char *_password);
-void clean();
+int h3c_init(char *_interface);
+int h3c_start();
+int h3c_logoff();
+int h3c_response(void (*success_callback)(), void (*failure_callback)());
+void h3c_set_username(char *_username);
+void h3c_set_password(char *_password);
+void h3c_set_verbose(int _verbose);
+void h3c_clean();
 
 #endif /* H3C_H_ */
