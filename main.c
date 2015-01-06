@@ -28,27 +28,62 @@ void exit_handler(int arg)
 	exit(0);
 }
 
+void usage()
+{
+	printf("usage\n");
+}
+
 int main(int argc, char **argv)
 {
-	/*
-	 * Check privilege
-	 */
+	int ch;
+	int vflag = 0;
+	char *interface = NULL;
+	char *username = NULL;
+	char *password = NULL;
+
+	//Must run as root.
 	if (geteuid() != 0)
 	{
 		printf("Run as root\n");
 		exit(-1);
 	}
 
-	/*
-	 * Check arguments
-	 */
-	if (argc != 4)
+	while ((ch = getopt(argc, argv, "i:u:p:v")) != -1)
 	{
-		printf("Usage:%s [interface] [username] [password]\n", argv[0]);
+		switch(ch)
+		{
+			case 'i':
+				interface = optarg;
+				break;
+			case 'u':
+				username = optarg;
+				break;
+			case 'p':
+				password = optarg;
+				break;
+			case 'v':
+				vflag = 1;
+				break;
+			default:
+				usage();
+				exit(-1);
+		}
+	}
+
+	if (interface == NULL || username == NULL)
+	{
+		usage();
 		exit(-1);
 	}
 
-	if (h3c_init(argv[1]) == -1)
+	if (password == NULL)
+		password = getpass("Password:");
+
+	h3c_set_verbose(vflag);
+	h3c_set_username(username);
+	h3c_set_password(password);
+
+	if (h3c_init(interface) == -1)
 	{
 		printf("Failed to initialize: %s\n",strerror(errno));
 		exit(-1);
@@ -56,10 +91,6 @@ int main(int argc, char **argv)
 
 	signal(SIGINT, exit_handler);
 	signal(SIGTERM, exit_handler);
-
-	h3c_set_username(argv[2]);
-	h3c_set_password(argv[3]);
-	h3c_set_verbose(1);
 
 	if (h3c_start() == -1)
 	{
