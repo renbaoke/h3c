@@ -89,7 +89,10 @@ int main(int argc, char **argv)
 	}
 
 	if (password == NULL)
-		password = getpass("Password:");
+	{
+		printf("Password for %s:", username);
+		password = getpass("");
+	}
 
 	if (vflag)
 		h3c_set_verbose(verbose_handler);
