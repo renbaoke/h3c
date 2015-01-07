@@ -102,7 +102,7 @@ int h3c_logoff();
 int h3c_response(void (*success_callback)(), void (*failure_callback)());
 void h3c_set_username(char *_username);
 void h3c_set_password(char *_password);
-void h3c_set_verbose(int _verbose);
+void h3c_set_verbose(void (*verbose_callback)(char *));
 void h3c_clean();
 
 #endif /* H3C_H_ */

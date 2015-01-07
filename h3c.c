@@ -26,8 +26,6 @@
 
 static int sockfd;
 
-static int verbose = 1;
-
 static char username[USR_LEN];
 static char password[PWD_LEN];
 
@@ -49,6 +47,8 @@ static struct bpf_program filter = {
 #else
 static struct sockaddr_ll addr;
 #endif
+
+static void (*verbose_callback)(char *) = NULL;
 
 static inline void set_eapol_header(unsigned char type, \
 		unsigned short length)
@@ -136,8 +136,8 @@ static int send_id(unsigned char packet_id)
 	unsigned short len = htons( sizeof(struct eap) + TYPE_LEN + \
 			sizeof(VERSION_INFO) + username_length );
 
-	if (verbose)
-		printf("Sending Identity...\n");
+	if (verbose_callback)
+		verbose_callback("Sending Identity...\n");
 
 	set_eapol_header(EAPOL_EAPPACKET, len);
 	set_eap_header(EAP_RESPONSE, packet_id, len);
@@ -157,8 +157,8 @@ static int send_md5(unsigned char packet_id, unsigned char *md5data)
 	unsigned short len = htons(sizeof(struct eap) + TYPE_LEN + \
 			MD5_LEN_LEN + MD5_LEN + username_length);
 
-	if (verbose)
-		printf("Sending MD5-Challenge...\n");
+	if (verbose_callback)
+		verbose_callback("Sending MD5-Challenge...\n");
 
 	memset(md5, 0, MD5_LEN);
 	memcpy(md5, password, MD5_LEN);
@@ -188,8 +188,8 @@ static int send_h3c(unsigned char packet_id)
 	unsigned short len = htons(sizeof(struct eap) + 1 + 1 + \
 			password_length + username_length);
 
-	if (verbose)
-		printf("Sending Allocated...\n");
+	if (verbose_callback)
+		verbose_callback("Sending Allocated...\n");
 
 	set_eapol_header(EAPOL_EAPPACKET, len);
 	set_eap_header(EAP_RESPONSE, packet_id, len);
@@ -207,8 +207,8 @@ int h3c_init(char *_interface)
 {
 	struct ifreq ifr;
 
-	if (verbose)
-		printf("Initilizing...\n");
+	if (verbose_callback)
+		verbose_callback("Initilizing...\n");
 
 	//Set destination mac address.
 	memcpy(pkt(send_buf)->eth_header.ether_dhost, PAE_GROUP_ADDR, ETH_ALEN);
@@ -283,15 +283,15 @@ void h3c_set_password(char *_password)
 	strcpy(password, _password);
 }
 
-void h3c_set_verbose(int _verbose)
+void h3c_set_verbose(void (*_verbose_callback)(char *))
 {
-	verbose = _verbose;
+	verbose_callback = _verbose_callback;
 }
 
 int h3c_start()
 {
-	if (verbose)
-		printf("Starting...\n");
+	if (verbose_callback)
+		verbose_callback("Starting...\n");
 
 	set_eapol_header(EAPOL_START, 0);
 	return sendout(sizeof(struct ether_header)+ sizeof(struct eapol));
@@ -299,8 +299,8 @@ int h3c_start()
 
 int h3c_logoff()
 {
-	if (verbose)
-		printf("Logging off...\n");
+	if (verbose_callback)
+		verbose_callback("Logging off...\n");
 
 	set_eapol_header(EAPOL_LOGOFF, 0);
 	return sendout(sizeof(struct ether_header)+ sizeof(struct eapol));
@@ -308,8 +308,8 @@ int h3c_logoff()
 
 int h3c_response(void (*success_callback)(), void (*failure_callback)())
 {
-	if (verbose)
-		printf("Responsing...\n");
+	if (verbose_callback)
+		verbose_callback("Responsing...\n");
 
 	if (recvin(BUF_LEN) == -1)
 		return -1;
