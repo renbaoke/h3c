@@ -91,22 +91,28 @@ static int sendout(int length)
 static int recvin(int length)
 {
 	int ret;
+
 #ifdef AF_LINK
 	ret =  read(sockfd, recv_buf, length);
 
 #ifdef __NetBSD__
 #define HAT 22
-#else
+#endif
+#ifdef __FreeBSD__
 #define HAT 26
 #endif
+#ifdef __OpenBSD__
+#define HAT 22
+#endif
 
-	ret -= HAT;
-	unsigned char *x = recv_buf;
-	unsigned char *y = x + HAT;
-	int z = ret;
-	while (z--)
-		*x++ = *y++;
-	
+	if (ret > 0)
+	{	ret -= HAT;
+		unsigned char *x = recv_buf;
+		unsigned char *y = x + HAT;
+		int z = ret;
+		while (z--)
+			*x++ = *y++;
+	}
 #else
 	socklen_t len;
 	len = sizeof(addr);
@@ -237,6 +243,9 @@ int h3c_init(char *_interface)
 	if (ioctl(sockfd, BIOCSETIF, &ifr) == -1)
 		return -1;
 
+	if (ioctl(sockfd, BIOCSETF, &filter) == -1)
+		return -1;
+
 	n = 1;
 	if (ioctl(sockfd, BIOCIMMEDIATE, &n) == -1)
 		return -1;
@@ -245,14 +254,18 @@ int h3c_init(char *_interface)
 	n = 0;
 	if (ioctl(sockfd, BIOCSSEESENT, &n) == -1)
 		return -1;
-#else
+#endif
+#ifdef __FreeBSD__
 	n = BPF_D_IN;
 	if (ioctl(sockfd, BIOCSDIRECTION, &n) == -1)
 		return -1;
 #endif
-
-	if (ioctl(sockfd, BIOCSETF, &filter) == -1)
+#ifdef __OpenBSD__
+	n = BPF_DIRECTION_OUT;
+	if (ioctl(sockfd, BIOCSDIRFILT, &n) == -1)
 		return -1;
+#endif
+
 #else
 	if ((sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_PAE))) == -1)
 		return -1;

@@ -16,8 +16,12 @@
 
 #ifdef __NetBSD__
 #include <net/if_ether.h>
-#else
+#endif
+#ifdef __FreeBSD__
 #include <net/ethernet.h>
+#endif
+#ifdef __OpenBSD__
+#include <netinet/if_ether.h>
 #endif
 
 #ifdef AF_LINK
@@ -30,6 +34,7 @@
 #else
 //Linux
 #include <netpacket/packet.h>
+#include <net/ethernet.h>
 #endif
 
 #include <stdio.h>
@@ -69,6 +74,8 @@
 #ifndef ETH_ALEN
 #define ETH_ALEN 6
 #endif
+
+#define DEBUG
 
 const static char PAE_GROUP_ADDR[] = \
 		{0x01, 0x80, 0xc2, 0x00, 0x00, 0x03};

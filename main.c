@@ -54,9 +54,6 @@ int main(int argc, char **argv)
 	{
 		switch(ch)
 		{
-			case 'h':
-				usage();
-				exit(0);
 			case 'i':
 				interface = optarg;
 				break;
