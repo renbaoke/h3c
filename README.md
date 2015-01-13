@@ -7,7 +7,7 @@ client for h3c on *unix
 
 build: cc h3c.c main.c -o h3c
 
-usage: h3c -i <interface> -u <username> [-p <password>] [-v]
+usage: h3c -i \<interface\> -u \<username\> [-p \<password\>] [-v]
 
 todo: 1.signal handler 2.log 3.a bash script to control
 done: 1.signal handler

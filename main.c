@@ -35,9 +35,9 @@ void verbose_handler(char *msg)
 void usage()
 {
 	printf("Usage: h3c [OPTION]...\n");
-	printf("  -i <interface>\tset interface, required\n");
-	printf("  -u <username>\t\tset username, required\n");
-	printf("  -p <password>\t\tset password, optional\n");
+	printf("  -i <interface>\tspecify interface, required\n");
+	printf("  -u <username>\t\tspecify username, required\n");
+	printf("  -p <password>\t\tspecify password, optional\n");
 	printf("  -v\t\t\tverbose, optional\n");
 	printf("  -h\t\t\tshow this message\n");
 }

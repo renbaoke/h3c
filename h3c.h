@@ -14,6 +14,14 @@
 #include <net/if.h>
 #include <netinet/in.h>
 
+#ifdef AF_LINK
+/* BSD */
+#include <ifaddrs.h>
+#include <net/if_dl.h>
+#include <net/bpf.h>
+#include <net/if_types.h>
+#include <fcntl.h>
+
 #ifdef __NetBSD__
 #include <net/if_ether.h>
 #endif
@@ -24,15 +32,8 @@
 #include <netinet/if_ether.h>
 #endif
 
-#ifdef AF_LINK
-//BSD
-#include <ifaddrs.h>
-#include <net/if_dl.h>
-#include <net/bpf.h>
-#include <net/if_types.h>
-#include <fcntl.h>
 #else
-//Linux
+/* Linux */
 #include <netpacket/packet.h>
 #include <net/ethernet.h>
 #endif
@@ -59,7 +60,8 @@
 #define EAP_SUCCESS 3
 #define EAP_FAILURE 4
 
-#define BUF_LEN 128
+#define BUF_LEN 256
+#define MSG_LEN 32
 #define MD5_LEN 16
 #define USR_LEN 16
 #define PWD_LEN 16
