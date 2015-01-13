@@ -1,8 +1,29 @@
 /*
  * h3c.c
- *
+ * 
+ * Copyright 2015 BK <bk@bk-ThinkPad-X61>
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301, USA.
+ * 
+ * 
+ */
+
+/*
  *  Created on: Dec 2, 2014
- *      Author: baoke
+ *      Author: BK <renbaoke@gmail.com>
  */
 
 #include "h3c.h"
@@ -181,7 +202,7 @@ static int send_md5(unsigned char packet_id, unsigned char *md5data)
 	memset(md5, 0, MD5_LEN);
 	memcpy(md5, password, MD5_LEN);
 
-	//Do md5, learned from yah3c.
+	/* Learned from yah3c. */
 	int i;
 	for (i = 0; i < MD5_LEN; i++)
 		md5[i] ^= md5data[i];
@@ -200,7 +221,7 @@ static int send_md5(unsigned char packet_id, unsigned char *md5data)
 
 static int send_h3c(unsigned char packet_id)
 {
-	//Not called so far as i can observe.
+	/* Not called so far as i can observe. */
 	int username_length = strlen(username);
 	int password_length = strlen(password);
 	unsigned short len = htons(sizeof(struct eap) + 1 + 1 + \
@@ -228,10 +249,10 @@ int h3c_init(char *_interface)
 	if (verbose_callback)
 		verbose_callback("Initilizing...\n");
 
-	//Set destination mac address.
+	/* Set destination mac address. */
 	memcpy(send_pkt->eth_header.ether_dhost, PAE_GROUP_ADDR, ETH_ALEN);
 
-	// Set ethernet type.
+	/* Set ethernet type. */
 	send_pkt->eth_header.ether_type = htons(ETH_P_PAE);
 
 	strcpy(ifr.ifr_name, _interface);
@@ -290,7 +311,7 @@ int h3c_init(char *_interface)
 	if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == -1)
 		return -1;
 
-	//Set source mac address.
+	/* Set source mac address. */
 	memcpy(send_pkt->eth_header.ether_shost, \
 			ifr.ifr_hwaddr.sa_data, ETH_ALEN);
 #endif
