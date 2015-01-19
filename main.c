@@ -1,7 +1,7 @@
 /*
  * main.c
  * 
- * Copyright 2015 BK <bk@bk-ThinkPad-X61>
+ * Copyright 2015 BK <renbaoke@gmail.com>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,13 +31,13 @@
 
 void success_handler()
 {
-	printf("You are now online\n");
+	printf("You are now online.\n");
 	daemon(0, 0);
 }
 
 void failure_handler()
 {
-	printf("You are now offline\n");
+	printf("You are now offline.\n");
 }
 
 void exit_handler(int arg)

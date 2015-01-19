@@ -1,7 +1,7 @@
 /*
  * h3c.h
  * 
- * Copyright 2015 BK <bk@bk-ThinkPad-X61>
+ * Copyright 2015 BK <renbaoke@gmail.com>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

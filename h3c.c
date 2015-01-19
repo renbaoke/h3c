@@ -1,7 +1,7 @@
 /*
  * h3c.c
  * 
- * Copyright 2015 BK <bk@bk-ThinkPad-X61>
+ * Copyright 2015 BK <renbaoke@gmail.com>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,9 +65,8 @@ static struct bpf_insn insns[] = {
 	BPF_STMT(BPF_LD+BPF_H+BPF_ABS, 12),
 	BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, ETH_P_PAE, 0, 1),
 	BPF_STMT(BPF_RET+BPF_K, (u_int)-1),
-	BPF_STMT(BPF_RET+BPF_K, 0),
+	BPF_STMT(BPF_RET+BPF_K, 0)
 };
-
 static struct bpf_program filter = {
 	sizeof(insns) / sizeof(insns[0]),
 	insns
@@ -100,9 +99,9 @@ static int sendout(int length)
 	char msg[MSG_LEN];
 	if (verbose_callback)
 	{
-		int i;
 		snprintf(msg, MSG_LEN, "Sending %d bytes:\n", length);
 		verbose_callback(msg);
+		int i;
 		for (i = 0; i < length; i++)
 		{
 			if (i == 0)
@@ -111,6 +110,7 @@ static int sendout(int length)
 				verbose_callback("\n");
 			else
 				verbose_callback(" ");
+
 			snprintf(msg, MSG_LEN, "%2.2x", send_buf[i]);
 			verbose_callback(msg);
 		}
@@ -147,9 +147,9 @@ static int recvin(int length)
 	char msg[MSG_LEN];
 	if (verbose_callback)
 	{
-		int i;
 		snprintf(msg, MSG_LEN, "Received %d bytes:\n", ret);
 		verbose_callback(msg);
+		int i;
 		for (i = 0; i < ret; i++)
 		{
 			if (i == 0)
@@ -158,6 +158,7 @@ static int recvin(int length)
 				verbose_callback("\n");
 			else
 				verbose_callback(" ");
+
 			snprintf(msg, MSG_LEN, "%2.2x", \
 					((unsigned char *)recv_pkt)[i]);
 			verbose_callback(msg);
@@ -264,7 +265,7 @@ int h3c_init(char *_interface)
 
 	do {
 		sockfd = open(device, O_RDWR);
-	} while ((sockfd == -1) && (errno == EBUSY) && device[8]++ != '9');
+	} while ((sockfd == -1) && (errno == EBUSY) && (device[8]++ != '9'));
 
 	if (sockfd == -1)
 		return -1;
@@ -361,16 +362,12 @@ int h3c_response(void (*success_callback)(), void (*failure_callback)())
 		return -1;
 
 	if (recv_pkt->eapol_header.type != EAPOL_EAPPACKET)
-		/*
-		 * Got unknown eapol type.
-		 */
+		/* Got unknown eapol type. */
 		return 0;
 
 	if (recv_pkt->eap_header.code == EAP_SUCCESS)
 	{
-		/*
-		 * Got success.
-		 */
+		/* Got success. */
 		if (success_callback)
 			success_callback();
 
@@ -378,9 +375,7 @@ int h3c_response(void (*success_callback)(), void (*failure_callback)())
 	}
 	else if (recv_pkt->eap_header.code == EAP_FAILURE)
 	{
-		/*
-		 * Got failure.
-		 */
+		/* Got failure. */
 		if (failure_callback)
 			failure_callback();
 
@@ -401,14 +396,10 @@ int h3c_response(void (*success_callback)(), void (*failure_callback)())
 		else
 			return 0;
 	else if (recv_pkt->eap_header.code == EAP_RESPONSE)
-		/*
-		 * Got response.
-		 */
+		/* Got response. */
 		return 0;
 	else
-		/*
-		 * Got unkown eap type
-		 */
+		/* Got unkown eap type. */
 		return 0;
 }
 
