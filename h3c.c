@@ -21,11 +21,6 @@
  * 
  */
 
-/*
- *  Created on: Dec 2, 2014
- *      Author: BK <renbaoke@gmail.com>
- */
-
 #include "h3c.h"
 
 #define send_pkt ((struct packet *)send_buf)
