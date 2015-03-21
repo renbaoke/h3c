@@ -49,12 +49,6 @@
 
 static int sockfd;
 
-static char username[USR_LEN];
-static char password[PWD_LEN];
-
-static unsigned char send_buf[BUF_LEN];
-static unsigned char recv_buf[BUF_LEN];
-
 #ifdef AF_LINK
 static struct bpf_insn insns[] = {
 	BPF_STMT(BPF_LD+BPF_H+BPF_ABS, 12),
@@ -69,8 +63,6 @@ static struct bpf_program filter = {
 #else
 static struct sockaddr_ll addr;
 #endif
-
-static void (*verbose_callback)(char *) = NULL;
 
 static inline void set_eapol_header(unsigned char type, \
 		unsigned short length)
@@ -90,79 +82,38 @@ static inline void set_eap_header(unsigned char code, \
 
 static int sendout(int length)
 {
-#ifdef DEBUG
-	char msg[MSG_LEN];
-	if (verbose_callback)
-	{
-		snprintf(msg, MSG_LEN, "Sending %d bytes:\n", length);
-		verbose_callback(msg);
-		int i;
-		for (i = 0; i < length; i++)
-		{
-			if (i == 0)
-				;
-			else if (i % 16 == 0)
-				verbose_callback("\n");
-			else
-				verbose_callback(" ");
-
-			snprintf(msg, MSG_LEN, "%2.2x", send_buf[i]);
-			verbose_callback(msg);
-		}
-		verbose_callback("\n");
-	}
-#endif
-
 #ifdef AF_LINK
-	return write(sockfd, send_buf, length);
+	if (write(sockfd, send_buf, length) == -1)
+		return SEND_ERR;
+	else
+		return SUCCESS;
 #else
-	return sendto(sockfd, send_buf, length, 0, \
-			(struct sockaddr*)&addr, sizeof(addr));
+	if (sendto(sockfd, send_buf, length, 0, (struct sockaddr*)&addr, \
+			sizeof(addr)) == -1)
+		return SEND_ERR;
+	else
+		return SUCCESS;
 #endif
 }
 
 static int recvin(int length)
 {
-	int ret;
-
 #ifdef AF_LINK
 	if (read(sockfd, recv_buf, length) == -1)
-		return -1;
+		return RECV_ERR;
+	else
+		return SUCCESS;
 
-	ret = ((struct bpf_hdr*)recv_buf)->bh_datalen;
 #else
 	socklen_t len;
 	len = sizeof(addr);
 
-	ret =  recvfrom(sockfd, recv_buf, length, 0, \
-			(struct sockaddr *)&addr, &len);
+	if (recvfrom(sockfd, recv_buf, length, 0, \
+			(struct sockaddr *)&addr, &len) == -1)
+		return RECV_ERR;
+	else
+		return SUCCESS;
 #endif
-
-#ifdef DEBUG
-	char msg[MSG_LEN];
-	if (verbose_callback)
-	{
-		snprintf(msg, MSG_LEN, "Received %d bytes:\n", ret);
-		verbose_callback(msg);
-		int i;
-		for (i = 0; i < ret; i++)
-		{
-			if (i == 0)
-				;
-			else if (i % 16 == 0)
-				verbose_callback("\n");
-			else
-				verbose_callback(" ");
-
-			snprintf(msg, MSG_LEN, "%2.2x", \
-					((unsigned char *)recv_pkt)[i]);
-			verbose_callback(msg);
-		}
-		verbose_callback("\n");
-	}
-#endif
-
-	return ret;
 }
 
 static int send_id(unsigned char packet_id)
@@ -170,9 +121,6 @@ static int send_id(unsigned char packet_id)
 	int username_length = strlen(username);
 	unsigned short len = htons( sizeof(struct eap) + TYPE_LEN + \
 			sizeof(VERSION_INFO) + username_length );
-
-	if (verbose_callback)
-		verbose_callback("Sending Identity...\n");
 
 	set_eapol_header(EAPOL_EAPPACKET, len);
 	set_eap_header(EAP_RESPONSE, packet_id, len);
@@ -192,13 +140,9 @@ static int send_md5(unsigned char packet_id, unsigned char *md5data)
 	unsigned short len = htons(sizeof(struct eap) + TYPE_LEN + \
 			MD5_LEN_LEN + MD5_LEN + username_length);
 
-	if (verbose_callback)
-		verbose_callback("Sending MD5-Challenge...\n");
-
 	memset(md5, 0, MD5_LEN);
 	memcpy(md5, password, MD5_LEN);
 
-	/* Learned from yah3c. */
 	int i;
 	for (i = 0; i < MD5_LEN; i++)
 		md5[i] ^= md5data[i];
@@ -217,14 +161,10 @@ static int send_md5(unsigned char packet_id, unsigned char *md5data)
 
 static int send_h3c(unsigned char packet_id)
 {
-	/* Not called so far as i can observe. */
 	int username_length = strlen(username);
 	int password_length = strlen(password);
 	unsigned short len = htons(sizeof(struct eap) + 1 + 1 + \
 			password_length + username_length);
-
-	if (verbose_callback)
-		verbose_callback("Sending Allocated...\n");
 
 	set_eapol_header(EAPOL_EAPPACKET, len);
 	set_eap_header(EAP_RESPONSE, packet_id, len);
@@ -242,9 +182,6 @@ int h3c_init(char *_interface)
 {
 	struct ifreq ifr;
 
-	if (verbose_callback)
-		verbose_callback("Initilizing...\n");
-
 	/* Set destination mac address. */
 	memcpy(send_pkt->eth_header.ether_dhost, PAE_GROUP_ADDR, ETH_ALEN);
 
@@ -252,7 +189,6 @@ int h3c_init(char *_interface)
 	send_pkt->eth_header.ether_type = htons(ETH_P_PAE);
 
 	strcpy(ifr.ifr_name, _interface);
-
 #ifdef AF_LINK
 	struct ifaddrs *ifhead, *ifa;
 	char device[] = "/dev/bpf0";
@@ -263,118 +199,120 @@ int h3c_init(char *_interface)
 	} while ((sockfd == -1) && (errno == EBUSY) && (device[8]++ != '9'));
 
 	if (sockfd == -1)
-		return -1;
+		return BPF_OPEN_ERR;
 
 	n = BUF_LEN;
 	if (ioctl(sockfd, BIOCSBLEN, &n) == -1)
-		return -1;
+		return BPF_SET_BUF_LEN_ERR;
 
 	if (ioctl(sockfd, BIOCSETIF, &ifr) == -1)
-		return -1;
+		return BPF_SET_IF_ERR;
 
 	if (ioctl(sockfd, BIOCSETF, &filter) == -1)
-		return -1;
+		return BPF_SET_FILTER_ERR;
 
 	n = 1;
 	if (ioctl(sockfd, BIOCIMMEDIATE, &n) == -1)
-		return -1;
+		return BPF_SET_IMMEDIATE_ERR;
 
 #ifdef __NetBSD__
 	n = 0;
 	if (ioctl(sockfd, BIOCSSEESENT, &n) == -1)
-		return -1;
-#endif
-#ifdef __FreeBSD__
+		return BPF_SET_DIRECTION_ERR;
+#elif __FreeBSD__
 	n = BPF_D_IN;
 	if (ioctl(sockfd, BIOCSDIRECTION, &n) == -1)
-		return -1;
-#endif
-#ifdef __OpenBSD__
+		return BPF_SET_DIRECTION_ERR;
+#elif __OpenBSD__
 	n = BPF_DIRECTION_OUT;
 	if (ioctl(sockfd, BIOCSDIRFILT, &n) == -1)
-		return -1;
+		return BPF_SET_DIRECTION_ERR;
 #endif
 
 #else
 	if ((sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_PAE))) == -1)
-		return -1;
+		return SOCKET_OPEN_ERR;
 
 	if (ioctl(sockfd,SIOCGIFINDEX,&ifr) == -1)
-		return -1;
+		return SOCKET_SET_IF_ERR;
 	else
 		addr.sll_ifindex = ifr.ifr_ifindex;
 
 	if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == -1)
-		return -1;
+		return SOCKET_GET_HWADDR_ERR;
 
 	/* Set source mac address. */
 	memcpy(send_pkt->eth_header.ether_shost, \
 			ifr.ifr_hwaddr.sa_data, ETH_ALEN);
 #endif
 
-	return 0;
+	return SUCCESS;
 }
 
-void h3c_set_username(char *_username)
+int h3c_set_username(char *_username)
 {
+	int username_length = strlen(_username);
+	if (username_length > USR_LEN - 1)
+		return USR_TOO_LONG;
+
 	strcpy(username, _username);
+	return SUCCESS;
 }
 
-void h3c_set_password(char *_password)
+int h3c_set_password(char *_password)
 {
+	int password_length = strlen(_password);
+	if (password_length > PWD_LEN - 1)
+		return PWD_TOO_LONG;
+
 	strcpy(password, _password);
-}
-
-void h3c_set_verbose(void (*_verbose_callback)(char *))
-{
-	verbose_callback = _verbose_callback;
+	return SUCCESS;
 }
 
 int h3c_start()
 {
-	if (verbose_callback)
-		verbose_callback("Starting...\n");
-
 	set_eapol_header(EAPOL_START, 0);
 	return sendout(sizeof(struct ether_header)+ sizeof(struct eapol));
 }
 
 int h3c_logoff()
 {
-	if (verbose_callback)
-		verbose_callback("Logging off...\n");
-
 	set_eapol_header(EAPOL_LOGOFF, 0);
 	return sendout(sizeof(struct ether_header)+ sizeof(struct eapol));
 }
 
-int h3c_response(void (*success_callback)(), void (*failure_callback)())
+int h3c_response(int (*success_callback)(void), \
+	int (*failure_callback)(void), \
+	int (*unkown_eapol_callback)(void), \
+	int (*unkown_eap_callback)(void), \
+	int (*got_response_callback)(void))
 {
-	if (verbose_callback)
-		verbose_callback("Responsing...\n");
-
-	if (recvin(BUF_LEN) == -1)
-		return -1;
+	if (recvin(BUF_LEN) == RECV_ERR)
+		return RECV_ERR;
 
 	if (recv_pkt->eapol_header.type != EAPOL_EAPPACKET)
+	{
 		/* Got unknown eapol type. */
-		return 0;
-
+		if (unkown_eapol_callback != NULL)
+			return unkown_eapol_callback();
+		else
+			return EAPOL_UNHANDLED;
+	}
 	if (recv_pkt->eap_header.code == EAP_SUCCESS)
 	{
 		/* Got success. */
-		if (success_callback)
-			success_callback();
-
-		return 0;
+		if (success_callback != NULL)
+			return success_callback();
+		else
+			return SUCCESS_UNHANDLED;
 	}
 	else if (recv_pkt->eap_header.code == EAP_FAILURE)
 	{
 		/* Got failure. */
-		if (failure_callback)
-			failure_callback();
-
-		return 0;
+		if (failure_callback != NULL)
+			return failure_callback();
+		else
+			return FAILURE_UNHANDLED;
 	}
 	else if (recv_pkt->eap_header.code == EAP_REQUEST)
 		/*
@@ -389,13 +327,23 @@ int h3c_response(void (*success_callback)(), void (*failure_callback)())
 		else if (*eap_type(recv_pkt) == EAP_TYPE_H3C)
 			return send_h3c(recv_pkt->eap_header.id);
 		else
-			return 0;
+			return SUCCESS;
 	else if (recv_pkt->eap_header.code == EAP_RESPONSE)
+	{
 		/* Got response. */
-		return 0;
+		if (got_response_callback != NULL)
+			return got_response_callback();
+		else
+			return RESPONSE_UNHANDLED;
+	}
 	else
+	{
 		/* Got unkown eap type. */
-		return 0;
+		if (unkown_eap_callback != NULL)
+			return unkown_eap_callback();
+		else
+			return EAP_UNHANDLED;
+	}
 }
 
 void h3c_clean()

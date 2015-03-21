@@ -21,23 +21,36 @@
  * 
  */
 
-/*
- *  Created on: Dec 5, 2014
- *      Author: BK <renbaoke@gmail.com>
- */
-
 #include <signal.h>
 #include "h3c.h"
 
-void success_handler()
+int success_handler()
 {
 	printf("You are now online.\n");
 	daemon(0, 0);
+	return SUCCESS;
 }
 
-void failure_handler()
+int failure_handler()
 {
 	printf("You are now offline.\n");
+	return SUCCESS;
+}
+
+int unkown_eapol_handler()
+{
+	return SUCCESS;
+}
+
+int unkown_eap_handler()
+{
+	return SUCCESS;
+}
+
+/* We should NOT got response messages and we ignore them. */
+int got_response_handler()
+{
+	return SUCCESS;
 }
 
 void exit_handler(int arg)
@@ -48,30 +61,23 @@ void exit_handler(int arg)
 	exit(0);
 }
 
-void verbose_handler(char *msg)
-{
-	printf("%s", msg);
-}
-
 void usage()
 {
 	printf("Usage: h3c [OPTION]...\n");
 	printf("  -i <interface>\tspecify interface, required\n");
 	printf("  -u <username>\t\tspecify username, required\n");
 	printf("  -p <password>\t\tspecify password, optional\n");
-	printf("  -v\t\t\tverbose, optional\n");
 	printf("  -h\t\t\tshow this message\n");
 }
 
 int main(int argc, char **argv)
 {
 	int ch;
-	int vflag = 0;
 	char *interface = NULL;
 	char *username = NULL;
 	char *password = NULL;
 
-	while ((ch = getopt(argc, argv, "i:u:p:vh")) != -1)
+	while ((ch = getopt(argc, argv, "i:u:p:h")) != -1)
 	{
 		switch(ch)
 		{
@@ -84,19 +90,16 @@ int main(int argc, char **argv)
 			case 'p':
 				password = optarg;
 				break;
-			case 'v':
-				vflag = 1;
-				break;
 			default:
 				usage();
 				exit(-1);
 		}
 	}
 
-	//Must run as root.
+	/* Must run as root. */
 	if (geteuid() != 0)
 	{
-		printf("Run as root\n");
+		printf("Run as root.\n");
 		exit(-1);
 	}
 
@@ -112,13 +115,20 @@ int main(int argc, char **argv)
 		password = getpass("");
 	}
 
-	if (vflag)
-		h3c_set_verbose(verbose_handler);
 
-	h3c_set_username(username);
-	h3c_set_password(password);
+	if (h3c_set_username(username) != SUCCESS)
+	{
+		printf("Username too long!");
+		exit(-1);
+	}
+	
+	if (h3c_set_password(password) != SUCCESS)
+	{
+		printf("Password too long!");
+		exit(-1);
+	}
 
-	if (h3c_init(interface) == -1)
+	if (h3c_init(interface) != SUCCESS)
 	{
 		printf("Failed to initialize: %s\n",strerror(errno));
 		exit(-1);
@@ -127,7 +137,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, exit_handler);
 	signal(SIGTERM, exit_handler);
 
-	if (h3c_start() == -1)
+	if (h3c_start() != 0)
 	{
 		printf("Failed to start: %s\n", strerror(errno));
 		exit(-1);
@@ -135,7 +145,9 @@ int main(int argc, char **argv)
 
 	for(;;)
 	{
-		if (h3c_response(success_handler, failure_handler) == -1)
+		if (h3c_response(success_handler, failure_handler, \
+				unkown_eapol_handler, unkown_eap_handler, \
+				got_response_handler) != 0)
 		{
 			printf("Failed to response: %s\n", strerror(errno));
 			exit(-1);
