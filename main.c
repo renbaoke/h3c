@@ -26,14 +26,14 @@
 
 int success_handler()
 {
-	printf("You are now online.\n");
+	printf("You are now ONLINE.\n");
 	daemon(0, 0);
 	return SUCCESS;
 }
 
 int failure_handler()
 {
-	printf("You are now offline.\n");
+	printf("You are now OFFLINE.\n");
 	return SUCCESS;
 }
 

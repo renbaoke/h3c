@@ -49,6 +49,12 @@
 
 static int sockfd;
 
+static char username[USR_LEN];
+static char password[PWD_LEN];
+
+static unsigned char send_buf[BUF_LEN];
+static unsigned char recv_buf[BUF_LEN];
+
 #ifdef AF_LINK
 static struct bpf_insn insns[] = {
 	BPF_STMT(BPF_LD+BPF_H+BPF_ABS, 12),
@@ -62,7 +68,7 @@ static struct bpf_program filter = {
 };
 #else
 static struct sockaddr_ll addr;
-#endif
+#endif /* AF_LINK */
 
 static inline void set_eapol_header(unsigned char type, \
 		unsigned short length)
@@ -93,7 +99,7 @@ static int sendout(int length)
 		return SEND_ERR;
 	else
 		return SUCCESS;
-#endif
+#endif /* AF_LINK */
 }
 
 static int recvin(int length)
@@ -113,7 +119,7 @@ static int recvin(int length)
 		return RECV_ERR;
 	else
 		return SUCCESS;
-#endif
+#endif /* AF_LINK */
 }
 
 static int send_id(unsigned char packet_id)
@@ -244,7 +250,7 @@ int h3c_init(char *_interface)
 	/* Set source mac address. */
 	memcpy(send_pkt->eth_header.ether_shost, \
 			ifr.ifr_hwaddr.sa_data, ETH_ALEN);
-#endif
+#endif /* AF_LINK */
 
 	return SUCCESS;
 }
