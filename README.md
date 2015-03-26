@@ -1,10 +1,8 @@
 h3c
 ===
 
-client for h3c on *UNIX
+UNIX平台中山大学东校区联网客户端。
 
-build: cc h3c.c main.c -o h3c
+编译：make
 
-usage: h3c -i \<interface\> -u \<username\> [-p \<password>]
-
-thanks:yah3c, wireshark
+感谢：yah3c, wireshark
