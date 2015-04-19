@@ -23,52 +23,9 @@
 
 #include <signal.h>
 #include "h3c.h"
+#include "handler.h"
 
-int success_handler()
-{
-	printf("You are now ONLINE.\n");
-	daemon(0, 0);
-	return SUCCESS;
-}
-
-int failure_handler()
-{
-	printf("You are now OFFLINE.\n");
-	return SUCCESS;
-}
-
-int unkown_eapol_handler()
-{
-	return SUCCESS;
-}
-
-int unkown_eap_handler()
-{
-	return SUCCESS;
-}
-
-/* We should NOT got response messages and we ignore them. */
-int got_response_handler()
-{
-	return SUCCESS;
-}
-
-void exit_handler(int arg)
-{
-	printf("\nExiting...\n");
-	h3c_logoff();
-	h3c_clean();
-	exit(0);
-}
-
-void usage()
-{
-	printf("Usage: h3c [OPTION]...\n");
-	printf("  -i <interface>\tspecify interface, required\n");
-	printf("  -u <username>\t\tspecify username, required\n");
-	printf("  -p <password>\t\tspecify password, optional\n");
-	printf("  -h\t\t\tshow this message\n");
-}
+#define MALLOC_SIZE_FOR_PASSWORD 32
 
 int main(int argc, char **argv)
 {
@@ -90,8 +47,11 @@ int main(int argc, char **argv)
 			case 'p':
 				password = optarg;
 				break;
+			case 'h':
+				usage(stdout);
+				exit(0);
 			default:
-				usage();
+				usage(stderr);
 				exit(-1);
 		}
 	}
@@ -99,13 +59,19 @@ int main(int argc, char **argv)
 	/* Must run as root. */
 	if (geteuid() != 0)
 	{
-		printf("Run as root.\n");
+		fprintf(stderr, "Run as root, please.\n");
 		exit(-1);
 	}
 
 	if (interface == NULL || username == NULL)
 	{
-		usage();
+		usage(stderr);
+		exit(-1);
+	}
+
+	if (h3c_set_username(username) != SUCCESS)
+	{
+		fprintf(stderr, "Failed to set username.\n");
 		exit(-1);
 	}
 
@@ -115,16 +81,9 @@ int main(int argc, char **argv)
 		password = getpass("");
 	}
 
-
-	if (h3c_set_username(username) != SUCCESS)
-	{
-		printf("Username too long!");
-		exit(-1);
-	}
-	
 	if (h3c_set_password(password) != SUCCESS)
 	{
-		printf("Password too long!");
+		fprintf(stderr, "Failed to set password.\n");
 		exit(-1);
 	}
 
@@ -137,7 +96,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, exit_handler);
 	signal(SIGTERM, exit_handler);
 
-	if (h3c_start() != 0)
+	if (h3c_start() != SUCCESS)
 	{
 		printf("Failed to start: %s\n", strerror(errno));
 		exit(-1);
@@ -147,7 +106,7 @@ int main(int argc, char **argv)
 	{
 		if (h3c_response(success_handler, failure_handler, \
 				unkown_eapol_handler, unkown_eap_handler, \
-				got_response_handler) != 0)
+				got_response_handler) != SUCCESS)
 		{
 			printf("Failed to response: %s\n", strerror(errno));
 			exit(-1);

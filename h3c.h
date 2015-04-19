@@ -141,59 +141,21 @@ const static char VERSION_INFO[] = \
 		'c', 'D', 'Y', '3', 'Y', '=',0x20,0x20};/* learned from yah3c */
 
 /*
- * param _interface: ethernet device name, e.g. eth0.
- * 
- * return:
- * 
- * SUCCESS
- * BPF_OPEN_ERR
- * BPF_SET_BUF_LEN_ERR
- * BPF_SET_IF_ERR
- * BPF_SET_FILTER_ERR
- * BPF_SET_IMMEDIATE_ERR
- * BPF_SET_DIRECTION_ERR
- * SOCKET_OPEN_ERR
- * SOCKET_SET_IF_ERR
- * SOCKET_GET_HWADDR_ERR
+ * param _interface: ethernet device name, e.g. eth0
+ * Use ifconfig to find ethernet device name.
  */
 int h3c_init(char *_interface);
 
-/*
- * return:
- * 
- * SUCCESS
- * SEND_ERR
- */
 int h3c_start();
 int h3c_logoff();
 
-/*
- * return:
- * 
- * SUCCESS
- * RECV_ERR
- * SEND_ERR
- */
 int h3c_response(int (*success_callback)(void), \
 	int (*failure_callback)(void), \
 	int (*unkown_eapol_callback)(void), \
 	int (*unkown_eap_callback)(void), \
 	int (*got_response_callback)(void));
 
-/*
- * return:
- * 
- * SUCCESS
- * USR_TOO_LONG
- */
 int h3c_set_username(char *_username);
-
-/*
- * return:
- * 
- * SUCCESS
- * PWD_TOO_LONG
- */
 int h3c_set_password(char *_password);
 
 void h3c_clean();
