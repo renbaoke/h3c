@@ -21,6 +21,9 @@
  * 
  */
 
+#ifndef HANDLER_H_
+#define HANDLER_H_
+
 #include <stdio.h>
 
 int success_handler();
@@ -30,4 +33,4 @@ int unkown_eap_handler();
 int got_response_handler();
 void exit_handler(int arg);
 
-void usage(FILE *stream);
+#endif /* HANDER_H_ */

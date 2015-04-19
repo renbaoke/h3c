@@ -60,12 +60,3 @@ void exit_handler(int arg)
 	h3c_clean();
 	exit(0);
 }
-
-void usage(FILE *stream)
-{
-	fprintf(stream, "Usage: h3c [OPTION]...\n");
-	fprintf(stream, "  -i <interface>\tspecify interface, required\n");
-	fprintf(stream, "  -u <username>\t\tspecify username, required\n");
-	fprintf(stream, "  -p <password>\t\tspecify password, optional\n");
-	fprintf(stream, "  -h\t\t\tshow this message\n");
-}

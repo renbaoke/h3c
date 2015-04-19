@@ -25,7 +25,7 @@
 #include "h3c.h"
 #include "handler.h"
 
-#define MALLOC_SIZE_FOR_PASSWORD 32
+void usage(FILE *stream);
 
 int main(int argc, char **argv)
 {
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 
 	if (h3c_init(interface) != SUCCESS)
 	{
-		printf("Failed to initialize: %s\n",strerror(errno));
+		fprintf(stderr, "Failed to initialize: %s\n",strerror(errno));
 		exit(-1);
 	}
 
@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 
 	if (h3c_start() != SUCCESS)
 	{
-		printf("Failed to start: %s\n", strerror(errno));
+		fprintf(stderr, "Failed to start: %s\n", strerror(errno));
 		exit(-1);
 	}
 
@@ -108,10 +108,19 @@ int main(int argc, char **argv)
 				unkown_eapol_handler, unkown_eap_handler, \
 				got_response_handler) != SUCCESS)
 		{
-			printf("Failed to response: %s\n", strerror(errno));
+			fprintf(stderr, "Failed to response: %s\n", strerror(errno));
 			exit(-1);
 		}
 	}
 
 	return 0;
+}
+
+void usage(FILE *stream)
+{
+	fprintf(stream, "Usage: h3c [OPTION]...\n");
+	fprintf(stream, "  -i <interface>\tspecify interface, required\n");
+	fprintf(stream, "  -u <username>\t\tspecify username, required\n");
+	fprintf(stream, "  -p <password>\t\tspecify password, optional\n");
+	fprintf(stream, "  -h\t\t\tshow this message\n");
 }
