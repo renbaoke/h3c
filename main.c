@@ -22,10 +22,13 @@
  */
 
 #include <signal.h>
+#include <termios.h>
 #include "h3c.h"
 #include "handler.h"
 
 void usage(FILE *stream);
+int echo_off(void);
+int echo_on(void);
 
 int main(int argc, char **argv)
 {
@@ -56,7 +59,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* Must run as root. */
+	/* must run as root */
 	if (geteuid() != 0)
 	{
 		fprintf(stderr, "Run as root, please.\n");
@@ -77,19 +80,33 @@ int main(int argc, char **argv)
 
 	if (password == NULL)
 	{
+		if ((password = (char *)malloc(PWD_LEN)) == NULL)
+		{
+			fprintf(stderr, "Failed to malloc: %s\n", strerror(errno));
+			exit(-1);
+		}	
 		printf("Password for %s:", username);
-		password = getpass("");
+
+		echo_off();
+
+		fgets(password, PWD_LEN - 1, stdin);
+		/* replace '\n' with '\0', as it is NOT part of password */
+		password[strlen(password) - 1] = '\0';
+
+		echo_on();
 	}
 
 	if (h3c_set_password(password) != SUCCESS)
 	{
 		fprintf(stderr, "Failed to set password.\n");
+		free(password);
 		exit(-1);
 	}
+	free(password);
 
 	if (h3c_init(interface) != SUCCESS)
 	{
-		fprintf(stderr, "Failed to initialize: %s\n",strerror(errno));
+		fprintf(stderr, "Failed to initialize: %s\n", strerror(errno));
 		exit(-1);
 	}
 
@@ -124,3 +141,44 @@ void usage(FILE *stream)
 	fprintf(stream, "  -p <password>\t\tspecify password, optional\n");
 	fprintf(stream, "  -h\t\t\tshow this message\n");
 }
+
+int echo_off(void)
+{
+	struct termios flags;
+	if (tcgetattr(fileno(stdin), &flags) == -1)
+	{
+		fprintf(stderr, "Failed to echo_off: %s", strerror(errno));
+		return -1;
+	}
+
+	flags.c_lflag &= ~ECHO;
+
+	if (tcsetattr(fileno(stdin), TCSANOW, &flags) == -1)
+	{
+		fprintf(stderr, "Failed to echo_off: %s", strerror(errno));
+		return -1;
+	}
+
+	return 0;
+}
+
+int echo_on(void)
+{
+	struct termios flags;
+	if (tcgetattr(fileno(stdin), &flags) == -1)
+	{
+		fprintf(stderr, "Failed to echo_on: %s", strerror(errno));
+		return -1;
+	}
+
+	flags.c_lflag |= ECHO;
+
+	if (tcsetattr(fileno(stdin), TCSANOW, &flags) == -1)
+	{
+		fprintf(stderr, "Failed to echo_on: %s", strerror(errno));
+		return -1;
+	}
+
+	return 0;
+}
+
