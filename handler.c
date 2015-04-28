@@ -25,13 +25,13 @@
 #include "h3c.h"
 
 int success_handler() {
-	printf("You are now ONLINE.\n");
+	printf("\nYou are now ONLINE.\n");
 	daemon(0, 0);
 	return SUCCESS;
 }
 
 int failure_handler() {
-	printf("You are now OFFLINE.\n");
+	printf("\nYou are now OFFLINE.\n");
 	return SUCCESS;
 }
 
