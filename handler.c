@@ -24,37 +24,31 @@
 #include "handler.h"
 #include "h3c.h"
 
-int success_handler()
-{
+int success_handler() {
 	printf("You are now ONLINE.\n");
 	daemon(0, 0);
 	return SUCCESS;
 }
 
-int failure_handler()
-{
+int failure_handler() {
 	printf("You are now OFFLINE.\n");
 	return SUCCESS;
 }
 
-int unkown_eapol_handler()
-{
+int unkown_eapol_handler() {
 	return SUCCESS;
 }
 
-int unkown_eap_handler()
-{
+int unkown_eap_handler() {
 	return SUCCESS;
 }
 
 /* We should NOT got response messages and we ignore them. */
-int got_response_handler()
-{
+int got_response_handler() {
 	return SUCCESS;
 }
 
-void exit_handler(int arg)
-{
+void exit_handler(int arg) {
 	printf("\nExiting...\n");
 	h3c_logoff();
 	h3c_clean();

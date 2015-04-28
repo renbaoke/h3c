@@ -30,61 +30,53 @@ void usage(FILE *stream);
 int echo_off(void);
 int echo_on(void);
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	int ch;
 	char *interface = NULL;
 	char *username = NULL;
 	char *password = NULL;
 
-	while ((ch = getopt(argc, argv, "i:u:p:h")) != -1)
-	{
-		switch(ch)
-		{
-			case 'i':
-				interface = optarg;
-				break;
-			case 'u':
-				username = optarg;
-				break;
-			case 'p':
-				password = optarg;
-				break;
-			case 'h':
-				usage(stdout);
-				exit(0);
-			default:
-				usage(stderr);
-				exit(-1);
+	while ((ch = getopt(argc, argv, "i:u:p:h")) != -1) {
+		switch (ch) {
+		case 'i':
+			interface = optarg;
+			break;
+		case 'u':
+			username = optarg;
+			break;
+		case 'p':
+			password = optarg;
+			break;
+		case 'h':
+			usage(stdout);
+			exit(0);
+		default:
+			usage(stderr);
+			exit(-1);
 		}
 	}
 
 	/* must run as root */
-	if (geteuid() != 0)
-	{
+	if (geteuid() != 0) {
 		fprintf(stderr, "Run as root, please.\n");
 		exit(-1);
 	}
 
-	if (interface == NULL || username == NULL)
-	{
+	if (interface == NULL || username == NULL) {
 		usage(stderr);
 		exit(-1);
 	}
 
-	if (h3c_set_username(username) != SUCCESS)
-	{
+	if (h3c_set_username(username) != SUCCESS) {
 		fprintf(stderr, "Failed to set username.\n");
 		exit(-1);
 	}
 
-	if (password == NULL)
-	{
-		if ((password = (char *)malloc(PWD_LEN)) == NULL)
-		{
+	if (password == NULL) {
+		if ((password = (char *) malloc(PWD_LEN)) == NULL) {
 			fprintf(stderr, "Failed to malloc: %s\n", strerror(errno));
 			exit(-1);
-		}	
+		}
 		printf("Password for %s:", username);
 
 		echo_off();
@@ -96,16 +88,14 @@ int main(int argc, char **argv)
 		echo_on();
 	}
 
-	if (h3c_set_password(password) != SUCCESS)
-	{
+	if (h3c_set_password(password) != SUCCESS) {
 		fprintf(stderr, "Failed to set password.\n");
 		free(password);
 		exit(-1);
 	}
 	free(password);
 
-	if (h3c_init(interface) != SUCCESS)
-	{
+	if (h3c_init(interface) != SUCCESS) {
 		fprintf(stderr, "Failed to initialize: %s\n", strerror(errno));
 		exit(-1);
 	}
@@ -113,18 +103,14 @@ int main(int argc, char **argv)
 	signal(SIGINT, exit_handler);
 	signal(SIGTERM, exit_handler);
 
-	if (h3c_start() != SUCCESS)
-	{
+	if (h3c_start() != SUCCESS) {
 		fprintf(stderr, "Failed to start: %s\n", strerror(errno));
 		exit(-1);
 	}
 
-	for(;;)
-	{
-		if (h3c_response(success_handler, failure_handler, \
-				unkown_eapol_handler, unkown_eap_handler, \
-				got_response_handler) != SUCCESS)
-		{
+	for (;;) {
+		if (h3c_response(success_handler, failure_handler, unkown_eapol_handler,
+				unkown_eap_handler, got_response_handler) != SUCCESS) {
 			fprintf(stderr, "Failed to response: %s\n", strerror(errno));
 			exit(-1);
 		}
@@ -133,8 +119,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-void usage(FILE *stream)
-{
+void usage(FILE *stream) {
 	fprintf(stream, "Usage: h3c [OPTION]...\n");
 	fprintf(stream, "  -i <interface>\tspecify interface, required\n");
 	fprintf(stream, "  -u <username>\t\tspecify username, required\n");
@@ -142,19 +127,16 @@ void usage(FILE *stream)
 	fprintf(stream, "  -h\t\t\tshow this message\n");
 }
 
-int echo_off(void)
-{
+int echo_off(void) {
 	struct termios flags;
-	if (tcgetattr(fileno(stdin), &flags) == -1)
-	{
+	if (tcgetattr(fileno(stdin), &flags) == -1) {
 		fprintf(stderr, "Failed to echo_off: %s", strerror(errno));
 		return -1;
 	}
 
 	flags.c_lflag &= ~ECHO;
 
-	if (tcsetattr(fileno(stdin), TCSANOW, &flags) == -1)
-	{
+	if (tcsetattr(fileno(stdin), TCSANOW, &flags) == -1) {
 		fprintf(stderr, "Failed to echo_off: %s", strerror(errno));
 		return -1;
 	}
@@ -162,19 +144,16 @@ int echo_off(void)
 	return 0;
 }
 
-int echo_on(void)
-{
+int echo_on(void) {
 	struct termios flags;
-	if (tcgetattr(fileno(stdin), &flags) == -1)
-	{
+	if (tcgetattr(fileno(stdin), &flags) == -1) {
 		fprintf(stderr, "Failed to echo_on: %s", strerror(errno));
 		return -1;
 	}
 
 	flags.c_lflag |= ECHO;
 
-	if (tcsetattr(fileno(stdin), TCSANOW, &flags) == -1)
-	{
+	if (tcsetattr(fileno(stdin), TCSANOW, &flags) == -1) {
 		fprintf(stderr, "Failed to echo_on: %s", strerror(errno));
 		return -1;
 	}

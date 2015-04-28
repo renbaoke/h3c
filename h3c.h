@@ -114,31 +114,29 @@
 #define FAILURE_UNHANDLED 17
 #define RESPONSE_UNHANDLED 18
 
-struct eapol{
+struct eapol {
 	unsigned char version;
 	unsigned char type;
 	unsigned short length;
 }__attribute__ ((packed)) eapol;
 
-struct eap{
+struct eap {
 	unsigned char code;
 	unsigned char id;
 	unsigned short length;
 }__attribute__ ((packed)) eap;
 
-struct packet{
+struct packet {
 	struct ether_header eth_header;
 	struct eapol eapol_header;
 	struct eap eap_header;
 }__attribute__ ((packed)) packet;
 
-const static char PAE_GROUP_ADDR[] = \
-		{0x01, 0x80, 0xc2, 0x00, 0x00, 0x03};/* broadcast mac address */
+const static char PAE_GROUP_ADDR[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x03 };/* broadcast mac address */
 
-const static char VERSION_INFO[] = \
-		{0x06, 0x07, 'b', 'j', 'Q', '7', 'S', 'E', '8', 'B', 'Z', '3', \
-		'M', 'q', 'H', 'h', 's', '3', 'c', 'l', 'M', 'r', 'e', 'g', \
-		'c', 'D', 'Y', '3', 'Y', '=',0x20,0x20};/* learned from yah3c */
+const static char VERSION_INFO[] = { 0x06, 0x07, 'b', 'j', 'Q', '7', 'S', 'E',
+		'8', 'B', 'Z', '3', 'M', 'q', 'H', 'h', 's', '3', 'c', 'l', 'M', 'r',
+		'e', 'g', 'c', 'D', 'Y', '3', 'Y', '=', 0x20, 0x20 };/* learned from yah3c */
 
 /*
  * param _interface: ethernet device name, e.g. eth0
@@ -149,11 +147,9 @@ int h3c_init(char *_interface);
 int h3c_start();
 int h3c_logoff();
 
-int h3c_response(int (*success_callback)(void), \
-	int (*failure_callback)(void), \
-	int (*unkown_eapol_callback)(void), \
-	int (*unkown_eap_callback)(void), \
-	int (*got_response_callback)(void));
+int h3c_response(int (*success_callback)(void), int (*failure_callback)(void),
+		int (*unkown_eapol_callback)(void), int (*unkown_eap_callback)(void),
+		int (*got_response_callback)(void));
 
 int h3c_set_username(char *_username);
 int h3c_set_password(char *_password);
