@@ -22,13 +22,11 @@
  */
 
 #include <signal.h>
-#include <termios.h>
+#include "echo.h"
 #include "h3c.h"
 #include "handler.h"
 
 void usage(FILE *stream);
-int echo_off(void);
-int echo_on(void);
 
 int main(int argc, char **argv) {
 	int ch;
@@ -79,13 +77,16 @@ int main(int argc, char **argv) {
 		}
 		printf("Password for %s:", username);
 
-		echo_off();
+		signal(SIGINT, exit_with_echo_on);
+		signal(SIGTERM, exit_with_echo_on);
 
+		echo_off();
 		fgets(password, PWD_LEN - 1, stdin);
+		echo_on();
+
 		/* replace '\n' with '\0', as it is NOT part of password */
 		password[strlen(password) - 1] = '\0';
-
-		echo_on();
+		putchar('\n');
 	}
 
 	if (h3c_set_password(password) != SUCCESS) {
@@ -100,13 +101,13 @@ int main(int argc, char **argv) {
 		exit(-1);
 	}
 
-	signal(SIGINT, exit_handler);
-	signal(SIGTERM, exit_handler);
-
 	if (h3c_start() != SUCCESS) {
 		fprintf(stderr, "Failed to start: %s\n", strerror(errno));
 		exit(-1);
 	}
+
+	signal(SIGINT, exit_handler);
+	signal(SIGTERM, exit_handler);
 
 	for (;;) {
 		if (h3c_response(success_handler, failure_handler, unkown_eapol_handler,
@@ -125,39 +126,5 @@ void usage(FILE *stream) {
 	fprintf(stream, "  -u <username>\t\tspecify username, required\n");
 	fprintf(stream, "  -p <password>\t\tspecify password, optional\n");
 	fprintf(stream, "  -h\t\t\tshow this message\n");
-}
-
-int echo_off(void) {
-	struct termios flags;
-	if (tcgetattr(fileno(stdin), &flags) == -1) {
-		fprintf(stderr, "Failed to echo_off: %s", strerror(errno));
-		return -1;
-	}
-
-	flags.c_lflag &= ~ECHO;
-
-	if (tcsetattr(fileno(stdin), TCSANOW, &flags) == -1) {
-		fprintf(stderr, "Failed to echo_off: %s", strerror(errno));
-		return -1;
-	}
-
-	return 0;
-}
-
-int echo_on(void) {
-	struct termios flags;
-	if (tcgetattr(fileno(stdin), &flags) == -1) {
-		fprintf(stderr, "Failed to echo_on: %s", strerror(errno));
-		return -1;
-	}
-
-	flags.c_lflag |= ECHO;
-
-	if (tcsetattr(fileno(stdin), TCSANOW, &flags) == -1) {
-		fprintf(stderr, "Failed to echo_on: %s", strerror(errno));
-		return -1;
-	}
-
-	return 0;
 }
 

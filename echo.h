@@ -1,5 +1,5 @@
 /*
- * handler.c
+ * echo.h
  * 
  * Copyright 2015 BK <renbaoke@gmail.com>
  * 
@@ -21,43 +21,14 @@
  * 
  */
 
-#include "handler.h"
-#include "h3c.h"
-#include "echo.h"
+#ifndef ECHO_H_
+#define ECHO_H_
 
-int success_handler() {
-	printf("You are now ONLINE.\n");
-	daemon(0, 0);
-	return SUCCESS;
-}
+#include <stdio.h>
+#include <termios.h>
+#include <errno.h>
 
-int failure_handler() {
-	printf("You are now OFFLINE.\n");
-	return SUCCESS;
-}
+int echo_off(void);
+int echo_on(void);
 
-int unkown_eapol_handler() {
-	return SUCCESS;
-}
-
-int unkown_eap_handler() {
-	return SUCCESS;
-}
-
-/* we should NOT got response messages */
-int got_response_handler() {
-	return SUCCESS;
-}
-
-void exit_handler(int arg) {
-	puts("\nExiting...\n");
-	h3c_logoff();
-	h3c_clean();
-	exit(0);
-}
-
-void exit_with_echo_on(int arg) {
-	putchar('\n');
-	echo_on();
-	exit(0);
-}
+#endif /* ECHO_H_ */

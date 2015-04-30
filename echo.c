@@ -1,5 +1,5 @@
 /*
- * handler.c
+ * echo.c
  * 
  * Copyright 2015 BK <renbaoke@gmail.com>
  * 
@@ -21,43 +21,38 @@
  * 
  */
 
-#include "handler.h"
-#include "h3c.h"
 #include "echo.h"
 
-int success_handler() {
-	printf("You are now ONLINE.\n");
-	daemon(0, 0);
-	return SUCCESS;
+int echo_off(void) {
+	struct termios flags;
+	if (tcgetattr(fileno(stdin), &flags) == -1) {
+		fprintf(stderr, "Failed to echo_off: %s", strerror(errno));
+		return -1;
+	}
+
+	flags.c_lflag &= ~ECHO;
+
+	if (tcsetattr(fileno(stdin), TCSANOW, &flags) == -1) {
+		fprintf(stderr, "Failed to echo_off: %s", strerror(errno));
+		return -1;
+	}
+
+	return 0;
 }
 
-int failure_handler() {
-	printf("You are now OFFLINE.\n");
-	return SUCCESS;
+int echo_on(void) {
+	struct termios flags;
+	if (tcgetattr(fileno(stdin), &flags) == -1) {
+		fprintf(stderr, "Failed to echo_on: %s", strerror(errno));
+		return -1;
+	}
+
+	flags.c_lflag |= ECHO;
+
+	if (tcsetattr(fileno(stdin), TCSANOW, &flags) == -1) {
+		fprintf(stderr, "Failed to echo_on: %s", strerror(errno));
+		return -1;
+	}
 }
 
-int unkown_eapol_handler() {
-	return SUCCESS;
-}
 
-int unkown_eap_handler() {
-	return SUCCESS;
-}
-
-/* we should NOT got response messages */
-int got_response_handler() {
-	return SUCCESS;
-}
-
-void exit_handler(int arg) {
-	puts("\nExiting...\n");
-	h3c_logoff();
-	h3c_clean();
-	exit(0);
-}
-
-void exit_with_echo_on(int arg) {
-	putchar('\n');
-	echo_on();
-	exit(0);
-}

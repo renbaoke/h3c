@@ -32,5 +32,6 @@ int unkown_eapol_handler();
 int unkown_eap_handler();
 int got_response_handler();
 void exit_handler(int arg);
+void exit_with_echo_on(int arg);
 
 #endif /* HANDER_H_ */
