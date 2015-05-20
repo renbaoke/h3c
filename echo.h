@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <termios.h>
 #include <errno.h>
+#include <string.h>
 
 int echo_off(void);
 int echo_on(void);
