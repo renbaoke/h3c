@@ -53,6 +53,8 @@ int echo_on(void) {
 		fprintf(stderr, "Failed to echo_on: %s", strerror(errno));
 		return -1;
 	}
+
+	return 0;
 }
 
 
