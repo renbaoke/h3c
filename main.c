@@ -1,24 +1,24 @@
 /*
  * main.c
- * 
+ *
  * Copyright 2015 BK <renbaoke@gmail.com>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
- * 
- * 
+ *
+ *
  */
 
 #include <signal.h>
@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
 	char *interface = NULL;
 	char *username = NULL;
 	char *password = NULL;
+	int alloc_pw = 0;
 
 	while ((ch = getopt(argc, argv, "i:u:p:h")) != -1) {
 		switch (ch) {
@@ -75,6 +76,7 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "Failed to malloc: %s\n", strerror(errno));
 			exit(-1);
 		}
+		alloc_pw = 1;
 		printf("Password for %s:", username);
 
 		signal(SIGINT, exit_with_echo_on);
@@ -91,10 +93,10 @@ int main(int argc, char **argv) {
 
 	if (h3c_set_password(password) != SUCCESS) {
 		fprintf(stderr, "Failed to set password.\n");
-		free(password);
+		if (alloc_pw) free(password);
 		exit(-1);
 	}
-	free(password);
+	if (alloc_pw) free(password);
 
 	if (h3c_init(interface) != SUCCESS) {
 		fprintf(stderr, "Failed to initialize: %s\n", strerror(errno));
