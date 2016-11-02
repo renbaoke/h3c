@@ -1,27 +1,28 @@
 /*
  * h3c.c
- * 
+ *
  * Copyright 2015 BK <renbaoke@gmail.com>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
- * 
- * 
+ *
+ *
  */
 
 #include "h3c.h"
+#include "md5/md5.h"
 
 #define send_pkt ((struct packet *)send_buf)
 
@@ -135,6 +136,22 @@ static int send_id(unsigned char packet_id) {
 					+ username_length);
 }
 
+static void get_md5_digest(unsigned char *digest, unsigned char packet_id, char *passwd, unsigned char *md5data) {
+	unsigned char msgbuf[128]; // msgbuf = packet_id + passwd + md5data
+	unsigned short msglen;
+	unsigned short passlen;
+	passlen = strlen(passwd);
+	msglen = 1 + passlen + 16;
+	msgbuf[0] = packet_id;
+	memcpy(msgbuf + 1, passwd, passlen);
+	memcpy(msgbuf + 1 + passlen, md5data, 16);
+	// calculate MD5 digest
+	md5_state_t state;
+	md5_init(&state);
+	md5_append(&state, (const md5_byte_t *)msgbuf, msglen);
+	md5_finish(&state, digest);
+}
+
 static int send_md5(unsigned char packet_id, unsigned char *md5data) {
 	int username_length = strlen(username);
 	unsigned char md5[MD5_LEN];
@@ -142,11 +159,7 @@ static int send_md5(unsigned char packet_id, unsigned char *md5data) {
 	MD5_LEN_LEN + MD5_LEN + username_length);
 
 	memset(md5, 0, MD5_LEN);
-	memcpy(md5, password, MD5_LEN);
-
-	int i;
-	for (i = 0; i < MD5_LEN; i++)
-		md5[i] ^= md5data[i];
+	get_md5_digest(md5, packet_id, password, md5data);
 
 	set_eapol_header(EAPOL_EAPPACKET, len);
 	set_eap_header(EAP_RESPONSE, packet_id, len);
