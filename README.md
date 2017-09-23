@@ -12,5 +12,5 @@ UNIX平台中山大学东校区联网客户端。
 
 感谢：yah3c, wireshark
 
-h3c_without_md5_k2p_mt7621a 是我为斐讯k2p编译好的h3c执行文件，可以运行在cpu为mt7621a操作系统为OpenWrt Chaos Calmer 15.05.1的路由器上。  
+h3c_without_md5_k2p_mt7621a 是我为斐讯k2p编译好的h3c执行文件，可以运行在cpu为mt7621a操作系统为OpenWrt Chaos Calmer 15.05.1的路由器上。   
 如果你在使用其他路由器，想让我帮你交叉编译对应的h3c，请发问题清单给我。
