@@ -8,6 +8,8 @@ UNIX平台中山大学东校区联网客户端。
 
 编译：make
 
+运行命令：echo "你的密码xx"|/含h3c的目录xx/h3c_without_md5_xx_xx -u 你的账号xx -i 路由器对应的wan口网卡例如eth1
+
 提示：交叉编译请更改Makefile的CC变量，strip会让可执行程序更小
 
 感谢：yah3c, wireshark
