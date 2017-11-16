@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
 	char *interface = NULL;
 	char *username = NULL;
 	char *password = NULL;
+	int can_free_pw = 0;
 
 	while ((ch = getopt(argc, argv, "i:u:p:h")) != -1) {
 		switch (ch) {
@@ -82,6 +83,7 @@ int main(int argc, char **argv) {
 
 		echo_off();
 		fgets(password, PWD_LEN - 1, stdin);
+		can_free_pw = 1;
 		echo_on();
 
 		/* replace '\n' with '\0', as it is NOT part of password */
@@ -91,10 +93,14 @@ int main(int argc, char **argv) {
 
 	if (h3c_set_password(password) != SUCCESS) {
 		fprintf(stderr, "Failed to set password.\n");
-		free(password);
+		if (can_free_pw) {
+			free(password);
+		}
 		exit(-1);
 	}
-	free(password);
+	if (can_free_pw) {
+		free(password);
+	}
 
 	if (h3c_init(interface) != SUCCESS) {
 		fprintf(stderr, "Failed to initialize: %s\n", strerror(errno));
