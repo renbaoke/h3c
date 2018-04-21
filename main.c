@@ -33,9 +33,10 @@ int main(int argc, char **argv) {
 	char *interface = NULL;
 	char *username = NULL;
 	char *password = NULL;
-	int alloc_pw = 0;
+	int can_free_pw = 0;
+	char md5_method = MD5_XOR;
 
-	while ((ch = getopt(argc, argv, "i:u:p:h")) != -1) {
+	while ((ch = getopt(argc, argv, "i:u:p:m:h")) != -1) {
 		switch (ch) {
 		case 'i':
 			interface = optarg;
@@ -45,6 +46,13 @@ int main(int argc, char **argv) {
 			break;
 		case 'p':
 			password = optarg;
+			break;
+		case 'm': {
+				char *use_md5 = "md5";
+				if(strcmp(optarg,use_md5) == 0) {
+					md5_method = MD5_MD5;
+				}
+			}
 			break;
 		case 'h':
 			usage(stdout);
@@ -84,6 +92,7 @@ int main(int argc, char **argv) {
 
 		echo_off();
 		fgets(password, PWD_LEN - 1, stdin);
+		can_free_pw = 1;
 		echo_on();
 
 		/* replace '\n' with '\0', as it is NOT part of password */
@@ -93,10 +102,14 @@ int main(int argc, char **argv) {
 
 	if (h3c_set_password(password) != SUCCESS) {
 		fprintf(stderr, "Failed to set password.\n");
-		if (alloc_pw) free(password);
+		if (can_free_pw) {
+			free(password);
+		}
 		exit(-1);
 	}
-	if (alloc_pw) free(password);
+	if (can_free_pw) {
+		free(password);
+	}
 
 	if (h3c_init(interface) != SUCCESS) {
 		fprintf(stderr, "Failed to initialize: %s\n", strerror(errno));
@@ -113,7 +126,7 @@ int main(int argc, char **argv) {
 
 	for (;;) {
 		if (h3c_response(success_handler, failure_handler, unkown_eapol_handler,
-				unkown_eap_handler, got_response_handler) != SUCCESS) {
+				unkown_eap_handler, got_response_handler, md5_method) != SUCCESS) {
 			fprintf(stderr, "Failed to response: %s\n", strerror(errno));
 			exit(-1);
 		}
@@ -127,6 +140,7 @@ void usage(FILE *stream) {
 	fprintf(stream, "  -i <interface>\tspecify interface, required\n");
 	fprintf(stream, "  -u <username>\t\tspecify username, required\n");
 	fprintf(stream, "  -p <password>\t\tspecify password, optional\n");
+	fprintf(stream, "  -m <md5 method>\tspecify xor or md5 to send md5 EAP, optional, default is xor\n");
 	fprintf(stream, "  -h\t\t\tshow this message\n");
 }
 
