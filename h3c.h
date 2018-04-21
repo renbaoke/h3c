@@ -114,6 +114,10 @@
 #define FAILURE_UNHANDLED 17
 #define RESPONSE_UNHANDLED 18
 
+// md5 method
+#define MD5_XOR 0
+#define MD5_MD5 1
+
 struct eapol {
 	unsigned char version;
 	unsigned char type;
@@ -149,7 +153,7 @@ int h3c_logoff();
 
 int h3c_response(int (*success_callback)(void), int (*failure_callback)(void),
 		int (*unkown_eapol_callback)(void), int (*unkown_eap_callback)(void),
-		int (*got_response_callback)(void));
+		int (*got_response_callback)(void), char md5_method);
 
 int h3c_set_username(char *_username);
 int h3c_set_password(char *_password);
