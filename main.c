@@ -84,7 +84,6 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "Failed to malloc: %s\n", strerror(errno));
 			exit(-1);
 		}
-		alloc_pw = 1;
 		printf("Password for %s:", username);
 
 		signal(SIGINT, exit_with_echo_on);
