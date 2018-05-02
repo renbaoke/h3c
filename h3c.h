@@ -80,7 +80,7 @@
 #define MSG_LEN 32
 #define MD5_LEN 16
 #define USR_LEN 16
-#define PWD_LEN 16
+#define PWD_LEN 64
 #define TYPE_LEN 1
 #define MD5_LEN_LEN 1
 #define H3C_LEN_LEN 1
