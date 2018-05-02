@@ -152,14 +152,24 @@ static void get_md5_digest(unsigned char *digest, unsigned char packet_id, char 
 	md5_finish(&state, digest);
 }
 
-static int send_md5(unsigned char packet_id, unsigned char *md5data) {
+static int send_md5(unsigned char packet_id, unsigned char *md5data, char md5_method) {
 	int username_length = strlen(username);
 	unsigned char md5[MD5_LEN];
 	unsigned short len = htons(sizeof(struct eap) + TYPE_LEN +
 	MD5_LEN_LEN + MD5_LEN + username_length);
 
 	memset(md5, 0, MD5_LEN);
-	get_md5_digest(md5, packet_id, password, md5data);
+	// choose md5 method
+	if(md5_method == MD5_XOR) {
+		//using XOR
+		memcpy(md5, password, MD5_LEN);
+		int i;
+		for (i = 0; i < MD5_LEN; i++)
+			md5[i] ^= md5data[i];
+	} else if(md5_method == MD5_MD5) {
+		//using MD5
+		get_md5_digest(md5, packet_id, password, md5data);
+	}
 
 	set_eapol_header(EAPOL_EAPPACKET, len);
 	set_eap_header(EAP_RESPONSE, packet_id, len);
@@ -291,7 +301,7 @@ int h3c_logoff() {
 
 int h3c_response(int (*success_callback)(void), int (*failure_callback)(void),
 		int (*unkown_eapol_callback)(void), int (*unkown_eap_callback)(void),
-		int (*got_response_callback)(void)) {
+		int (*got_response_callback)(void), char md5_method) {
 	if (recvin(BUF_LEN) == RECV_ERR)
 		return RECV_ERR;
 
@@ -322,7 +332,7 @@ int h3c_response(int (*success_callback)(void), int (*failure_callback)(void),
 		if (*eap_type(recv_pkt) == EAP_TYPE_ID)
 			return send_id(recv_pkt->eap_header.id);
 		else if (*eap_type(recv_pkt) == EAP_TYPE_MD5)
-			return send_md5(recv_pkt->eap_header.id, eap_md5_data(recv_pkt));
+			return send_md5(recv_pkt->eap_header.id, eap_md5_data(recv_pkt), md5_method);
 		else if (*eap_type(recv_pkt) == EAP_TYPE_H3C)
 			return send_h3c(recv_pkt->eap_header.id);
 		else
