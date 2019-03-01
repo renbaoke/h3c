@@ -44,6 +44,8 @@
 #include <net/ethernet.h>
 #elif __OpenBSD__
 #include <netinet/if_ether.h>
+#elif __APPLE__
+#include <net/ethernet.h>
 #else
 #error UNKOWN UNIX PLATFORM
 #endif
